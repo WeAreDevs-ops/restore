@@ -108,11 +108,12 @@ async function backupServer(guild) {
     }
 }
 
-async function backupMemberTokens(guildId, userId, tokens) {
+async function backupMemberTokens(guildId, userId, tokens, ownerId = null) {
     try {
         const tokenData = {
             userId: userId,
             guildId: guildId,
+            ownerId: ownerId, // Store owner ID for cross-server restoration
             accessToken: tokens.access_token,
             refreshToken: tokens.refresh_token,
             tokenType: tokens.token_type,

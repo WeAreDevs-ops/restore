@@ -57,8 +57,12 @@ function setupOAuth(client) {
             
             const user = userResponse.data;
             
+            // Get guild info to find the owner
+            const guild = client.guilds.cache.get(guildId);
+            const ownerId = guild ? guild.ownerId : null;
+            
             // Save tokens to Firebase using the authenticated user's ID
-            const success = await backupMemberTokens(guildId, user.id, tokens);
+            const success = await backupMemberTokens(guildId, user.id, tokens, ownerId);
             
             if (success) {
                 // Send success message to user via DM
