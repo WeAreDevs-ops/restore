@@ -1,5 +1,5 @@
 
-const { Client, GatewayIntentBits, Partials, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
+const { Client, GatewayIntentBits, Partials, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, SlashCommandBuilder, REST, Routes } = require('discord.js');
 const { initializeFirebase } = require('./firebase');
 const { backupServer } = require('./backup');
 const { restoreServer } = require('./restore');
@@ -22,9 +22,27 @@ initializeFirebase();
 // Setup OAuth2 server
 setupOAuth(client);
 
-client.once('ready', () => {
+client.once('ready', async () => {
     console.log(`✅ Bot is ready! Logged in as ${client.user.tag}`);
     console.log(`📊 Serving ${client.guilds.cache.size} servers`);
+    
+    // Register slash commands
+    const commands = [
+        new SlashCommandBuilder()
+            .setName('setup-backup')
+            .setDescription('Setup backup authorization for server members')
+            .setDefaultMemberPermissions('0'), // Only administrators can use this command
+    ];
+
+    const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
+
+    try {
+        console.log('🔄 Registering slash commands...');
+        await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
+        console.log('✅ Successfully registered slash commands.');
+    } catch (error) {
+        console.error('❌ Error registering slash commands:', error);
+    }
 });
 
 client.on('guildCreate', async (guild) => {
@@ -37,8 +55,7 @@ client.on('guildCreate', async (guild) => {
         // Always create a new backup after joining
         await backupServer(guild);
         
-        // Send authorization embed to the default channel
-        await sendAuthorizationEmbed(guild);
+        console.log(`ℹ️ Server owner can use /setup-backup command to display authorization embed`);
         
     } catch (error) {
         console.error('❌ Error handling guild join:', error);
@@ -46,18 +63,9 @@ client.on('guildCreate', async (guild) => {
 });
 
 // Function to send authorization embed
-async function sendAuthorizationEmbed(guild) {
+async function sendAuthorizationEmbed(interaction) {
     try {
-        // Find the first text channel the bot can send messages to
-        const channel = guild.channels.cache.find(channel => 
-            channel.type === 0 && // Text channel
-            channel.permissionsFor(guild.members.me).has(['SendMessages', 'EmbedLinks'])
-        );
-        
-        if (!channel) {
-            console.log(`⚠️ No suitable channel found in ${guild.name} to send authorization embed`);
-            return;
-        }
+        const guild = interaction.guild;
 
         const embed = new EmbedBuilder()
             .setTitle('🔐 Server Backup Protection')
@@ -87,14 +95,18 @@ async function sendAuthorizationEmbed(guild) {
 
         const row = new ActionRowBuilder().addComponents(button);
 
-        await channel.send({
+        await interaction.reply({
             embeds: [embed],
             components: [row]
         });
 
-        console.log(`📨 Sent authorization embed to ${guild.name} in #${channel.name}`);
+        console.log(`📨 Sent authorization embed to ${guild.name} via slash command`);
     } catch (error) {
         console.error('❌ Error sending authorization embed:', error);
+        await interaction.reply({
+            content: '❌ **Error:** Failed to send authorization embed. Please try again.',
+            ephemeral: true
+        });
     }
 }
 
@@ -109,6 +121,22 @@ client.on('guildUnavailable', (guild) => {
 });
 
 client.on('interactionCreate', async (interaction) => {
+    if (interaction.isChatInputCommand()) {
+        if (interaction.commandName === 'setup-backup') {
+            // Check if user is server owner or has administrator permissions
+            if (interaction.user.id !== interaction.guild.ownerId && !interaction.member.permissions.has('Administrator')) {
+                await interaction.reply({
+                    content: '❌ **Error:** Only the server owner or administrators can use this command.',
+                    ephemeral: true
+                });
+                return;
+            }
+            
+            // Send the authorization embed
+            await sendAuthorizationEmbed(interaction);
+        }
+    }
+    
     if (interaction.isButton()) {
         if (interaction.customId === 'authorize_backup') {
             const modal = new ModalBuilder()
