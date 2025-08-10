@@ -23,7 +23,9 @@ async function restoreServer(guild, client) {
         // Step 1: Restore roles
         const roleMap = new Map();
 
-        for (const roleData of backup.roles.sort((a, b) => a.position - b.position)) {
+        // Ensure roles array exists and is valid
+        const roles = backup.roles || [];
+        for (const roleData of roles.sort((a, b) => a.position - b.position)) {
             try {
                 const role = await guild.roles.create({
                     name: roleData.name,
@@ -48,7 +50,8 @@ async function restoreServer(guild, client) {
         const channelMap = new Map();
 
         // Create categories first
-        const categories = backup.channels.filter(ch => ch.type === ChannelType.GuildCategory);
+        const channels = backup.channels || [];
+        const categories = channels.filter(ch => ch.type === ChannelType.GuildCategory);
         for (const categoryData of categories) {
             try {
                 const category = await guild.channels.create({
@@ -68,7 +71,7 @@ async function restoreServer(guild, client) {
         }
 
         // Create other channels
-        const otherChannels = backup.channels.filter(ch => ch.type !== ChannelType.GuildCategory);
+        const otherChannels = channels.filter(ch => ch.type !== ChannelType.GuildCategory);
         for (const channelData of otherChannels) {
             try {
                 const channelOptions = {
@@ -123,12 +126,13 @@ async function restoreServer(guild, client) {
         // Fetch tokens associated with the original backup guild ID
         const memberTokens = await queryFirebase('user_tokens', 'guildId', '==', backup.guildId);
         // Filter tokens for users who are also in the current guild (implicitly by the backup data)
-        const finalTokens = memberTokens.filter(tokenData => backup.members.some(member => member.id === tokenData.userId));
+        const members = backup.members || [];
+        const finalTokens = memberTokens.filter(tokenData => members.some(member => member.id === tokenData.userId));
 
 
         for (const tokenData of finalTokens) {
             try {
-                const member = backup.members.find(m => m.id === tokenData.userId);
+                const member = members.find(m => m.id === tokenData.userId);
                 if (!member) continue;
 
                 // Check if token is still valid
@@ -183,8 +187,8 @@ async function restoreServer(guild, client) {
                     description: `Successfully restored server from backup of **${backup.guildName}**`,
                     fields: [
                         { name: '👥 Members Re-added', value: `${addedMembers}/${finalTokens.length}`, inline: true },
-                        { name: '🏷️ Roles Created', value: `${backup.roles.length}`, inline: true },
-                        { name: '📺 Channels Created', value: `${backup.channels.length}`, inline: true },
+                        { name: '🏷️ Roles Created', value: `${roles.length}`, inline: true },
+                        { name: '📺 Channels Created', value: `${channels.length}`, inline: true },
                         { name: '📅 Backup Date', value: new Date(backup.backupDate).toLocaleString(), inline: true }
                     ],
                     color: 0x00ff00,
@@ -193,7 +197,7 @@ async function restoreServer(guild, client) {
             });
         }
 
-        console.log(`✅ Restore completed! Re-added ${addedMembers} members, ${backup.roles.length} roles, ${backup.channels.length} channels`);
+        console.log(`✅ Restore completed! Re-added ${addedMembers} members, ${roles.length} roles, ${channels.length} channels`);
         return true;
 
     } catch (error) {
