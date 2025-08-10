@@ -88,18 +88,20 @@ async function sendAuthorizationEmbed(interaction) {
             .setFooter({ text: 'Backup Bot • Secure • Automatic' })
             .setTimestamp();
 
-        // Generate OAuth2 URL for the user who ran the command
-        const oauthUrl = generateAuthURL(interaction.user.id, guild.id);
+        // Create authorization button with generic OAuth URL (Discord will handle user identification)
+        const baseOAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${process.env.OAUTH2_CLIENT_ID}&redirect_uri=${encodeURIComponent(process.env.OAUTH2_REDIRECT_URI)}&response_type=code&scope=identify%20guilds.join&state=${guild.id}`;
         
-        // Add the authorization link directly to the embed
-        embed.addFields({
-            name: '🔗 Authorization Link',
-            value: `[**Click here to authorize your backup protection**](${oauthUrl})\n\n*This link is personalized for ${interaction.user.username}*`,
-            inline: false
-        });
+        const authButton = new ButtonBuilder()
+            .setLabel('🔐 Authorize Backup Protection')
+            .setStyle(ButtonStyle.Link)
+            .setURL(baseOAuthUrl);
+
+        const row = new ActionRowBuilder()
+            .addComponents(authButton);
 
         await interaction.reply({
-            embeds: [embed]
+            embeds: [embed],
+            components: [row]
         });
 
         console.log(`📨 Sent authorization embed to ${guild.name} via slash command`);
@@ -140,7 +142,7 @@ client.on('interactionCreate', async (interaction) => {
     }
     
     if (interaction.isButton()) {
-        // Button interactions removed - authorization is now direct link in embed
+        // No button interactions needed - direct OAuth links are used
     }
 });
 

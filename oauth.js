@@ -22,10 +22,10 @@ function setupOAuth(client) {
         }
         
         try {
-            // Parse state to get user and guild ID
-            const [userId, guildId] = state.split('_');
+            // Parse state - now just contains guild ID since Discord provides user info via OAuth
+            const guildId = state;
             
-            if (!userId || !guildId) {
+            if (!guildId) {
                 return res.status(400).send('Invalid state parameter');
             }
             
@@ -57,18 +57,13 @@ function setupOAuth(client) {
             
             const user = userResponse.data;
             
-            // Ensure the user ID matches
-            if (user.id !== userId) {
-                return res.status(403).send('User ID mismatch');
-            }
-            
-            // Save tokens to Firebase
-            const success = await backupMemberTokens(guildId, userId, tokens);
+            // Save tokens to Firebase using the authenticated user's ID
+            const success = await backupMemberTokens(guildId, user.id, tokens);
             
             if (success) {
                 // Send success message to user via DM
                 try {
-                    const discordUser = await client.users.fetch(userId);
+                    const discordUser = await client.users.fetch(user.id);
                     await discordUser.send({
                         embeds: [{
                             title: '✅ Authorization Successful',
@@ -78,7 +73,7 @@ function setupOAuth(client) {
                         }]
                     });
                 } catch (dmError) {
-                    console.log(`⚠️ Could not send DM to user ${userId}`);
+                    console.log(`⚠️ Could not send DM to user ${user.id}`);
                 }
                 
                 res.send(`
@@ -102,7 +97,7 @@ function setupOAuth(client) {
                     </html>
                 `);
                 
-                console.log(`🔐 Successfully stored OAuth2 tokens for user ${user.username} (${userId}) in guild ${guildId}`);
+                console.log(`🔐 Successfully stored OAuth2 tokens for user ${user.username} (${user.id}) in guild ${guildId}`);
             } else {
                 res.status(500).send('Failed to save authorization data');
             }
