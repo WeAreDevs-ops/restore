@@ -1,6 +1,5 @@
-
 const { Client, GatewayIntentBits, Partials, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, SlashCommandBuilder, REST, Routes } = require('discord.js');
-const { initializeFirebase } = require('./firebase');
+const { initializeFirebase, queryFirebase } = require('./firebase');
 const { backupServer } = require('./backup');
 const { restoreServer } = require('./restore');
 const { setupOAuth, generateAuthURL } = require('./oauth');
@@ -25,7 +24,7 @@ setupOAuth(client);
 client.once('ready', async () => {
     console.log(`✅ Bot is ready! Logged in as ${client.user.tag}`);
     console.log(`📊 Serving ${client.guilds.cache.size} servers`);
-    
+
     // Register slash commands
     const commands = [
         new SlashCommandBuilder()
@@ -54,28 +53,31 @@ client.once('ready', async () => {
 });
 
 client.on('guildCreate', async (guild) => {
-    console.log(`🆕 Joined new server: ${guild.name} (${guild.id})`);
-    
+    console.log(`➕ Joined new server: ${guild.name} (${guild.id})`);
+
     try {
-        // Check if this is a restoration (if we find backup data for this owner)
-        const { queryFirebase } = require('./firebase');
-        const backups = await queryFirebase('server_backups', 'ownerId', '==', guild.ownerId);
-        
-        if (backups.length > 0) {
-            console.log(`🔄 Found existing backup data for owner ${guild.ownerId}, attempting automatic restore...`);
-            await restoreServer(guild, client);
-        } else {
-            // Only backup if no existing backup found
-            console.log(`📦 No existing backup found, creating initial backup...`);
+        // First try to restore from previous backup (same owner)
+        console.log(`🔄 Checking for existing backup to restore...`);
+        const restored = await restoreServer(guild, client);
+
+        if (!restored) {
+            console.log(`ℹ️ No existing backup found, creating new backup...`);
+            // If no restore happened, create a backup of the current server state
             await backupServer(guild);
         }
-        
-        console.log(`ℹ️ Server owner can use /setup-backup command to display authorization embed`);
-        console.log(`ℹ️ Server owner can use /backup command to manually backup the server`);
-        console.log(`ℹ️ Server owner can use /restore command to restore from backup if needed`);
-        
+
+        // Send setup message to a suitable channel
+        const channel = guild.channels.cache.find(
+            ch => ch.type === 0 && // GuildText channel type
+            ch.permissionsFor(guild.members.me).has([1 << 10, 1 << 11]) // SendMessages, ViewChannel permissions
+        );
+
+        if (channel) {
+            await sendAuthorizationEmbed(interaction); // Pass interaction to sendAuthorizationEmbed
+        }
+
     } catch (error) {
-        console.error('❌ Error handling guild join:', error);
+        console.error('❌ Error handling new guild:', error);
     }
 });
 
@@ -107,7 +109,7 @@ async function sendAuthorizationEmbed(interaction) {
 
         // Create authorization button with generic OAuth URL (Discord will handle user identification)
         const baseOAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${process.env.OAUTH2_CLIENT_ID}&redirect_uri=${encodeURIComponent(process.env.OAUTH2_REDIRECT_URI)}&response_type=code&scope=identify%20guilds.join&state=${guild.id}`;
-        
+
         const authButton = new ButtonBuilder()
             .setLabel('🔐 Authorize Backup Protection')
             .setStyle(ButtonStyle.Link)
@@ -152,11 +154,11 @@ client.on('interactionCreate', async (interaction) => {
                 });
                 return;
             }
-            
+
             // Send the authorization embed
             await sendAuthorizationEmbed(interaction);
         }
-        
+
         if (interaction.commandName === 'backup') {
             // Check if user is server owner or has administrator permissions
             if (interaction.user.id !== interaction.guild.ownerId && !interaction.member.permissions.has('Administrator')) {
@@ -166,12 +168,12 @@ client.on('interactionCreate', async (interaction) => {
                 });
                 return;
             }
-            
+
             await interaction.deferReply();
-            
+
             try {
                 const success = await backupServer(interaction.guild);
-                
+
                 if (success) {
                     await interaction.editReply({
                         embeds: [{
@@ -203,7 +205,7 @@ client.on('interactionCreate', async (interaction) => {
                 });
             }
         }
-        
+
         if (interaction.commandName === 'restore') {
             // Check if user is server owner or has administrator permissions
             if (interaction.user.id !== interaction.guild.ownerId && !interaction.member.permissions.has('Administrator')) {
@@ -213,12 +215,12 @@ client.on('interactionCreate', async (interaction) => {
                 });
                 return;
             }
-            
+
             await interaction.deferReply();
-            
+
             try {
                 const restored = await restoreServer(interaction.guild, client);
-                
+
                 if (restored) {
                     await interaction.editReply({
                         embeds: [{
@@ -251,7 +253,7 @@ client.on('interactionCreate', async (interaction) => {
             }
         }
     }
-    
+
     if (interaction.isButton()) {
         // No button interactions needed - direct OAuth links are used
     }

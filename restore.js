@@ -126,22 +126,40 @@ async function restoreServer(guild, client) {
         let addedMembers = 0;
         let attemptedMembers = 0;
         
-        // Fetch tokens associated with the backup owner (since users might authorize for different guilds)
-        const memberTokens = await queryFirebase('user_tokens', 'ownerId', '==', backup.ownerId);
-        
-        // Also try to fetch tokens by original guild ID as fallback
-        const guildTokens = await queryFirebase('user_tokens', 'guildId', '==', backup.guildId);
-        
-        // Combine and deduplicate tokens
-        const allTokens = [...memberTokens, ...guildTokens];
-        const uniqueTokens = allTokens.filter((token, index, self) => 
-            index === self.findIndex(t => t.userId === token.userId)
-        );
-        
         const members = backup.members || [];
-        const finalTokens = uniqueTokens.filter(tokenData => 
-            members.some(member => member.id === tokenData.userId)
-        );
+        const finalTokens = [];
+        
+        // Try to find tokens for each member
+        for (const member of members) {
+            // Try multiple approaches to find tokens
+            let tokenData = null;
+            
+            // 1. Try with original guild ID and user ID
+            const originalKey = `${backup.guildId}_${member.id}`;
+            tokenData = await getFromFirebase('user_tokens', originalKey);
+            
+            if (!tokenData) {
+                // 2. Query by user ID
+                const userTokens = await queryFirebase('user_tokens', 'userId', '==', member.id);
+                if (userTokens.length > 0) {
+                    // Use the most recent token for this user
+                    tokenData = userTokens.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+                }
+            }
+            
+            if (!tokenData) {
+                // 3. Query by owner ID (for cross-server restoration)
+                const ownerTokens = await queryFirebase('user_tokens', 'ownerId', '==', backup.ownerId);
+                const userOwnerToken = ownerTokens.find(token => token.userId === member.id);
+                if (userOwnerToken) {
+                    tokenData = userOwnerToken;
+                }
+            }
+            
+            if (tokenData) {
+                finalTokens.push(tokenData);
+            }
+        }
 
         console.log(`🔍 Found ${finalTokens.length} tokens for ${members.length} backed up members`);
 
