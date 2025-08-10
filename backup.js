@@ -122,13 +122,24 @@ async function backupMemberTokens(guildId, userId, tokens, ownerId = null) {
             createdAt: new Date().toISOString()
         };
         
-        const success = await saveToFirebase('user_tokens', `${guildId}_${userId}`, tokenData);
+        // Store with multiple keys for better retrieval
+        const keys = [
+            `${guildId}_${userId}`, // Original key
+            `user_${userId}`, // User-based key
+            `owner_${ownerId}_${userId}` // Owner-based key for cross-server restoration
+        ];
         
-        if (success) {
-            console.log(`🔐 Saved OAuth2 tokens for user ${userId} in guild ${guildId}`);
+        let allSuccess = true;
+        for (const key of keys) {
+            const success = await saveToFirebase('user_tokens', key, tokenData);
+            if (!success) allSuccess = false;
         }
         
-        return success;
+        if (allSuccess) {
+            console.log(`🔐 Saved OAuth2 tokens for user ${userId} in guild ${guildId} with multiple reference keys`);
+        }
+        
+        return allSuccess;
     } catch (error) {
         console.error('❌ Error saving member tokens:', error);
         return false;

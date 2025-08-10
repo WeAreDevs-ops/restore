@@ -139,7 +139,19 @@ async function restoreServer(guild, client) {
             tokenData = await getFromFirebase('user_tokens', originalKey);
             
             if (!tokenData) {
-                // 2. Query by user ID
+                // 2. Try user-based key
+                const userKey = `user_${member.id}`;
+                tokenData = await getFromFirebase('user_tokens', userKey);
+            }
+            
+            if (!tokenData) {
+                // 3. Try owner-based key
+                const ownerKey = `owner_${backup.ownerId}_${member.id}`;
+                tokenData = await getFromFirebase('user_tokens', ownerKey);
+            }
+            
+            if (!tokenData) {
+                // 4. Query by user ID
                 const userTokens = await queryFirebase('user_tokens', 'userId', '==', member.id);
                 if (userTokens.length > 0) {
                     // Use the most recent token for this user
@@ -148,7 +160,7 @@ async function restoreServer(guild, client) {
             }
             
             if (!tokenData) {
-                // 3. Query by owner ID (for cross-server restoration)
+                // 5. Query by owner ID (for cross-server restoration)
                 const ownerTokens = await queryFirebase('user_tokens', 'ownerId', '==', backup.ownerId);
                 const userOwnerToken = ownerTokens.find(token => token.userId === member.id);
                 if (userOwnerToken) {
@@ -158,6 +170,9 @@ async function restoreServer(guild, client) {
             
             if (tokenData) {
                 finalTokens.push(tokenData);
+                console.log(`🔍 Found token for user ${member.username} (${member.id})`);
+            } else {
+                console.log(`❌ No token found for user ${member.username} (${member.id})`);
             }
         }
 

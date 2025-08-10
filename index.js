@@ -39,6 +39,10 @@ client.once('ready', async () => {
             .setName('restore')
             .setDescription('Manually restore server from backup')
             .setDefaultMemberPermissions('0'), // Only administrators can use this command
+        new SlashCommandBuilder()
+            .setName('backup-now')
+            .setDescription('Manually backup current server immediately')
+            .setDefaultMemberPermissions('0'), // Only administrators can use this command
     ];
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -246,6 +250,53 @@ client.on('interactionCreate', async (interaction) => {
                     embeds: [{
                         title: '❌ Restoration Failed',
                         description: 'An error occurred during the restoration process. Please try again or check the console logs.',
+                        color: 0xff0000,
+                        timestamp: new Date()
+                    }]
+                });
+            }
+        }
+
+        if (interaction.commandName === 'backup-now') {
+            // Check if user is server owner or has administrator permissions
+            if (interaction.user.id !== interaction.guild.ownerId && !interaction.member.permissions.has('Administrator')) {
+                await interaction.reply({
+                    content: '❌ **Error:** Only the server owner or administrators can use this command.',
+                    ephemeral: true
+                });
+                return;
+            }
+
+            await interaction.deferReply();
+
+            try {
+                const success = await backupServer(interaction.guild);
+
+                if (success) {
+                    await interaction.editReply({
+                        embeds: [{
+                            title: '✅ Force Backup Complete',
+                            description: `Successfully backed up **${interaction.guild.name}**\n\nThe backup includes all current roles, channels, and member data.`,
+                            color: 0x00ff00,
+                            timestamp: new Date()
+                        }]
+                    });
+                } else {
+                    await interaction.editReply({
+                        embeds: [{
+                            title: '❌ Backup Failed',
+                            description: 'An error occurred during the backup process. Please check the console logs and try again.',
+                            color: 0xff0000,
+                            timestamp: new Date()
+                        }]
+                    });
+                }
+            } catch (error) {
+                console.error('❌ Error during force backup:', error);
+                await interaction.editReply({
+                    embeds: [{
+                        title: '❌ Backup Failed',
+                        description: 'An error occurred during the backup process. Please try again or check the console logs.',
                         color: 0xff0000,
                         timestamp: new Date()
                     }]
