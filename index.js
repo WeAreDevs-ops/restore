@@ -32,6 +32,10 @@ client.once('ready', async () => {
             .setName('setup-backup')
             .setDescription('Setup backup authorization for server members')
             .setDefaultMemberPermissions('0'), // Only administrators can use this command
+        new SlashCommandBuilder()
+            .setName('restore')
+            .setDescription('Manually restore server from backup')
+            .setDefaultMemberPermissions('0'), // Only administrators can use this command
     ];
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -49,13 +53,11 @@ client.on('guildCreate', async (guild) => {
     console.log(`🆕 Joined new server: ${guild.name} (${guild.id})`);
     
     try {
-        // Check if this is a restore scenario (we have backup data for a similar server)
-        await restoreServer(guild, client);
-        
         // Always create a new backup after joining
         await backupServer(guild);
         
         console.log(`ℹ️ Server owner can use /setup-backup command to display authorization embed`);
+        console.log(`ℹ️ Server owner can use /restore command to restore from backup if needed`);
         
     } catch (error) {
         console.error('❌ Error handling guild join:', error);
@@ -138,6 +140,53 @@ client.on('interactionCreate', async (interaction) => {
             
             // Send the authorization embed
             await sendAuthorizationEmbed(interaction);
+        }
+        
+        if (interaction.commandName === 'restore') {
+            // Check if user is server owner or has administrator permissions
+            if (interaction.user.id !== interaction.guild.ownerId && !interaction.member.permissions.has('Administrator')) {
+                await interaction.reply({
+                    content: '❌ **Error:** Only the server owner or administrators can use this command.',
+                    ephemeral: true
+                });
+                return;
+            }
+            
+            await interaction.deferReply();
+            
+            try {
+                const restored = await restoreServer(interaction.guild, client);
+                
+                if (restored) {
+                    await interaction.editReply({
+                        embeds: [{
+                            title: '✅ Restoration Started',
+                            description: 'Server restoration process has been initiated! Check the progress in your server channels.',
+                            color: 0x00ff00,
+                            timestamp: new Date()
+                        }]
+                    });
+                } else {
+                    await interaction.editReply({
+                        embeds: [{
+                            title: '❌ No Backup Found',
+                            description: 'No backup data found for your server owner ID. Make sure you had the bot in a previous server that was backed up.',
+                            color: 0xff0000,
+                            timestamp: new Date()
+                        }]
+                    });
+                }
+            } catch (error) {
+                console.error('❌ Error during manual restore:', error);
+                await interaction.editReply({
+                    embeds: [{
+                        title: '❌ Restoration Failed',
+                        description: 'An error occurred during the restoration process. Please try again or check the console logs.',
+                        color: 0xff0000,
+                        timestamp: new Date()
+                    }]
+                });
+            }
         }
     }
     
