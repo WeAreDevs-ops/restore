@@ -3,6 +3,115 @@ const express = require('express');
 const axios = require('axios');
 const { backupMemberTokens } = require('./backup');
 
+let app;
+let botClient;
+
+function setupOAuth(client) {
+    botClient = client;
+    
+    if (!app) {
+        app = express();
+        app.use(express.json());
+        
+        // OAuth callback endpoint
+        app.get('/callback', async (req, res) => {
+            const { code, state } = req.query;
+            
+            if (!code || !state) {
+                return res.status(400).send('Missing authorization code or state');
+            }
+            
+            try {
+                // Exchange code for access token
+                const tokenResponse = await axios.post('https://discord.com/api/oauth2/token', new URLSearchParams({
+                    client_id: process.env.OAUTH2_CLIENT_ID,
+                    client_secret: process.env.OAUTH2_CLIENT_SECRET,
+                    grant_type: 'authorization_code',
+                    code: code,
+                    redirect_uri: process.env.OAUTH2_REDIRECT_URI,
+                    scope: 'identify guilds.join'
+                }), {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                });
+                
+                const tokens = tokenResponse.data;
+                
+                // Get user info
+                const userResponse = await axios.get('https://discord.com/api/users/@me', {
+                    headers: {
+                        'Authorization': `Bearer ${tokens.access_token}`
+                    }
+                });
+                
+                const user = userResponse.data;
+                const guildId = state; // Guild ID passed as state
+                
+                // Get guild info to get owner ID
+                const guild = botClient.guilds.cache.get(guildId);
+                const ownerId = guild ? guild.ownerId : null;
+                
+                // Save tokens with owner ID
+                await backupMemberTokens(guildId, user.id, tokens, ownerId);
+                
+                res.send(`
+                    <html>
+                        <head>
+                            <title>Authorization Complete</title>
+                            <style>
+                                body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #36393f; color: white; }
+                                .success { color: #43b581; font-size: 24px; margin-bottom: 20px; }
+                                .info { color: #b9bbbe; font-size: 16px; }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="success">✅ Authorization Successful!</div>
+                            <div class="info">
+                                You can now close this tab and return to Discord.<br>
+                                You're now protected against server deletions and will be automatically re-added to any new server created by the same owner.
+                            </div>
+                        </body>
+                    </html>
+                `);
+                
+                console.log(`✅ Authorized user ${user.username} (${user.id}) for guild ${guildId} with owner ${ownerId}`);
+                
+            } catch (error) {
+                console.error('❌ OAuth callback error:', error);
+                res.status(500).send('Authorization failed. Please try again.');
+            }
+        });
+        
+        // Health check endpoint
+        app.get('/health', (req, res) => {
+            res.send('OAuth server is running');
+        });
+        
+        const port = process.env.PORT || 3000;
+        app.listen(port, '0.0.0.0', () => {
+            console.log(`✅ OAuth server running on port ${port}`);
+        });
+    }
+}
+
+function generateAuthURL(guildId, userId = null) {
+    const params = new URLSearchParams({
+        client_id: process.env.OAUTH2_CLIENT_ID,
+        redirect_uri: process.env.OAUTH2_REDIRECT_URI,
+        response_type: 'code',
+        scope: 'identify guilds.join',
+        state: guildId
+    });
+    
+    return `https://discord.com/api/oauth2/authorize?${params.toString()}`;
+}
+
+module.exports = {
+    setupOAuth,
+    generateAuthURL
+};
+
 function setupOAuth(client) {
     const app = express();
     

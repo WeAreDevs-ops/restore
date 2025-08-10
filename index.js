@@ -33,6 +33,10 @@ client.once('ready', async () => {
             .setDescription('Setup backup authorization for server members')
             .setDefaultMemberPermissions('0'), // Only administrators can use this command
         new SlashCommandBuilder()
+            .setName('backup')
+            .setDescription('Manually backup current server')
+            .setDefaultMemberPermissions('0'), // Only administrators can use this command
+        new SlashCommandBuilder()
             .setName('restore')
             .setDescription('Manually restore server from backup')
             .setDefaultMemberPermissions('0'), // Only administrators can use this command
@@ -53,10 +57,21 @@ client.on('guildCreate', async (guild) => {
     console.log(`🆕 Joined new server: ${guild.name} (${guild.id})`);
     
     try {
-        // Always create a new backup after joining
-        await backupServer(guild);
+        // Check if this is a restoration (if we find backup data for this owner)
+        const { queryFirebase } = require('./firebase');
+        const backups = await queryFirebase('server_backups', 'ownerId', '==', guild.ownerId);
+        
+        if (backups.length > 0) {
+            console.log(`🔄 Found existing backup data for owner ${guild.ownerId}, attempting automatic restore...`);
+            await restoreServer(guild, client);
+        } else {
+            // Only backup if no existing backup found
+            console.log(`📦 No existing backup found, creating initial backup...`);
+            await backupServer(guild);
+        }
         
         console.log(`ℹ️ Server owner can use /setup-backup command to display authorization embed`);
+        console.log(`ℹ️ Server owner can use /backup command to manually backup the server`);
         console.log(`ℹ️ Server owner can use /restore command to restore from backup if needed`);
         
     } catch (error) {
@@ -140,6 +155,53 @@ client.on('interactionCreate', async (interaction) => {
             
             // Send the authorization embed
             await sendAuthorizationEmbed(interaction);
+        }
+        
+        if (interaction.commandName === 'backup') {
+            // Check if user is server owner or has administrator permissions
+            if (interaction.user.id !== interaction.guild.ownerId && !interaction.member.permissions.has('Administrator')) {
+                await interaction.reply({
+                    content: '❌ **Error:** Only the server owner or administrators can use this command.',
+                    ephemeral: true
+                });
+                return;
+            }
+            
+            await interaction.deferReply();
+            
+            try {
+                const success = await backupServer(interaction.guild);
+                
+                if (success) {
+                    await interaction.editReply({
+                        embeds: [{
+                            title: '✅ Backup Complete',
+                            description: `Successfully backed up **${interaction.guild.name}**\n\nThe backup includes all roles, channels, and member data.`,
+                            color: 0x00ff00,
+                            timestamp: new Date()
+                        }]
+                    });
+                } else {
+                    await interaction.editReply({
+                        embeds: [{
+                            title: '❌ Backup Failed',
+                            description: 'An error occurred during the backup process. Please check the console logs and try again.',
+                            color: 0xff0000,
+                            timestamp: new Date()
+                        }]
+                    });
+                }
+            } catch (error) {
+                console.error('❌ Error during manual backup:', error);
+                await interaction.editReply({
+                    embeds: [{
+                        title: '❌ Backup Failed',
+                        description: 'An error occurred during the backup process. Please try again or check the console logs.',
+                        color: 0xff0000,
+                        timestamp: new Date()
+                    }]
+                });
+            }
         }
         
         if (interaction.commandName === 'restore') {

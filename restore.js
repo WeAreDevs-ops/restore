@@ -124,21 +124,42 @@ async function restoreServer(guild, client) {
 
         // Step 3: Re-add members using OAuth2 tokens
         let addedMembers = 0;
-        // Fetch tokens associated with the original backup guild ID
-        const memberTokens = await queryFirebase('user_tokens', 'guildId', '==', backup.guildId);
-        // Filter tokens for users who are also in the current guild (implicitly by the backup data)
+        let attemptedMembers = 0;
+        
+        // Fetch tokens associated with the backup owner (since users might authorize for different guilds)
+        const memberTokens = await queryFirebase('user_tokens', 'ownerId', '==', backup.ownerId);
+        
+        // Also try to fetch tokens by original guild ID as fallback
+        const guildTokens = await queryFirebase('user_tokens', 'guildId', '==', backup.guildId);
+        
+        // Combine and deduplicate tokens
+        const allTokens = [...memberTokens, ...guildTokens];
+        const uniqueTokens = allTokens.filter((token, index, self) => 
+            index === self.findIndex(t => t.userId === token.userId)
+        );
+        
         const members = backup.members || [];
-        const finalTokens = memberTokens.filter(tokenData => members.some(member => member.id === tokenData.userId));
+        const finalTokens = uniqueTokens.filter(tokenData => 
+            members.some(member => member.id === tokenData.userId)
+        );
 
+        console.log(`🔍 Found ${finalTokens.length} tokens for ${members.length} backed up members`);
 
         for (const tokenData of finalTokens) {
             try {
                 const member = members.find(m => m.id === tokenData.userId);
                 if (!member) continue;
 
-                // Check if token is still valid
-                if (new Date(tokenData.expiresAt) <= new Date()) {
-                    console.log(`⚠️ Token expired for user ${member.username}, skipping`);
+                attemptedMembers++;
+                console.log(`🔄 Attempting to restore member: ${member.username} (${tokenData.userId})`);
+
+                // Check if token is still valid (with some buffer time)
+                const tokenExpiry = new Date(tokenData.expiresAt);
+                const now = new Date();
+                const bufferTime = 5 * 60 * 1000; // 5 minutes buffer
+                
+                if (tokenExpiry <= new Date(now.getTime() + bufferTime)) {
+                    console.log(`⚠️ Token expired or expiring soon for user ${member.username}, skipping`);
                     continue;
                 }
 
@@ -147,29 +168,37 @@ async function restoreServer(guild, client) {
 
                 if (success) {
                     addedMembers++;
-                    console.log(`👤 Re-added member: ${member.username}`);
+                    console.log(`✅ Successfully re-added member: ${member.username}`);
 
                     // Wait a bit before adding roles
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    await new Promise(resolve => setTimeout(resolve, 2000));
 
                     // Restore member roles
-                    const guildMember = await guild.members.fetch(tokenData.userId).catch(() => null);
-                    if (guildMember) {
-                        for (const roleData of member.roles) {
-                            const newRoleId = roleMap.get(roleData.id);
-                            if (newRoleId) {
-                                try {
-                                    await guildMember.roles.add(newRoleId, 'Server restoration from backup');
-                                } catch (error) {
-                                    console.error(`❌ Failed to add role ${roleData.name} to ${member.username}`);
+                    try {
+                        const guildMember = await guild.members.fetch(tokenData.userId);
+                        if (guildMember && member.roles) {
+                            for (const roleData of member.roles) {
+                                const newRoleId = roleMap.get(roleData.id);
+                                if (newRoleId) {
+                                    try {
+                                        await guildMember.roles.add(newRoleId, 'Server restoration from backup');
+                                        console.log(`✅ Added role ${roleData.name} to ${member.username}`);
+                                        await new Promise(resolve => setTimeout(resolve, 500));
+                                    } catch (error) {
+                                        console.error(`❌ Failed to add role ${roleData.name} to ${member.username}:`, error.message);
+                                    }
                                 }
                             }
                         }
+                    } catch (error) {
+                        console.error(`❌ Failed to fetch member after adding: ${error.message}`);
                     }
+                } else {
+                    console.log(`❌ Failed to add member: ${member.username}`);
                 }
 
                 // Rate limiting for Discord API
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await new Promise(resolve => setTimeout(resolve, 2000));
             } catch (error) {
                 console.error(`❌ Failed to re-add member ${tokenData.userId}:`, error.message);
             }
@@ -187,7 +216,7 @@ async function restoreServer(guild, client) {
                     title: '🔄 Server Restoration Complete',
                     description: `Successfully restored server from backup of **${backup.guildName}**`,
                     fields: [
-                        { name: '👥 Members Re-added', value: `${addedMembers}/${finalTokens.length}`, inline: true },
+                        { name: '👥 Members Re-added', value: `${addedMembers}/${attemptedMembers} attempted (${finalTokens.length} tokens found)`, inline: true },
                         { name: '🏷️ Roles Created', value: `${roles.length}`, inline: true },
                         { name: '📺 Channels Created', value: `${channels.length}`, inline: true },
                         { name: '📅 Backup Date', value: new Date(backup.backupDate).toLocaleString(), inline: true }
@@ -198,7 +227,7 @@ async function restoreServer(guild, client) {
             });
         }
 
-        console.log(`✅ Restore completed! Re-added ${addedMembers} members, ${roles.length} roles, ${channels.length} channels`);
+        console.log(`✅ Restore completed! Re-added ${addedMembers}/${attemptedMembers} members (${finalTokens.length} tokens found), ${roles.length} roles, ${channels.length} channels`);
         return true;
 
     } catch (error) {
