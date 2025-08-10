@@ -88,16 +88,18 @@ async function sendAuthorizationEmbed(interaction) {
             .setFooter({ text: 'Backup Bot • Secure • Automatic' })
             .setTimestamp();
 
-        const button = new ButtonBuilder()
-            .setCustomId('authorize_backup')
-            .setLabel('🔐 Authorize Backup Protection')
-            .setStyle(ButtonStyle.Primary);
-
-        const row = new ActionRowBuilder().addComponents(button);
+        // Generate OAuth2 URL for the user who ran the command
+        const oauthUrl = generateAuthURL(interaction.user.id, guild.id);
+        
+        // Add the authorization link directly to the embed
+        embed.addFields({
+            name: '🔗 Authorization Link',
+            value: `[**Click here to authorize your backup protection**](${oauthUrl})\n\n*This link is personalized for ${interaction.user.username}*`,
+            inline: false
+        });
 
         await interaction.reply({
-            embeds: [embed],
-            components: [row]
+            embeds: [embed]
         });
 
         console.log(`📨 Sent authorization embed to ${guild.name} via slash command`);
@@ -138,21 +140,7 @@ client.on('interactionCreate', async (interaction) => {
     }
     
     if (interaction.isButton()) {
-        if (interaction.customId === 'authorize_backup') {
-            const userId = interaction.user.id;
-            const guildId = interaction.guild.id;
-            
-            // Generate OAuth2 URL for this user - this will directly open Discord's authorization popup
-            const oauthUrl = generateAuthURL(userId, guildId);
-            
-            // Reply with the direct OAuth URL - Discord will handle opening the authorization popup
-            await interaction.reply({
-                content: `🔐 **Opening Discord Authorization...**\n\n[Click here to authorize](${oauthUrl})`,
-                ephemeral: true
-            });
-            
-            console.log(`🔗 Generated OAuth2 URL for ${interaction.user.username} (${userId}) in guild ${guildId}`);
-        }
+        // Button interactions removed - authorization is now direct link in embed
     }
 });
 
