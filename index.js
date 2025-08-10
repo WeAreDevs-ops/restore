@@ -139,62 +139,19 @@ client.on('interactionCreate', async (interaction) => {
     
     if (interaction.isButton()) {
         if (interaction.customId === 'authorize_backup') {
-            const modal = new ModalBuilder()
-                .setCustomId('verification_modal')
-                .setTitle('🔐 Backup Authorization');
-
-            const userIdInput = new TextInputBuilder()
-                .setCustomId('user_id')
-                .setLabel('Your Discord User ID')
-                .setStyle(TextInputStyle.Short)
-                .setPlaceholder('Enter your Discord User ID')
-                .setValue(interaction.user.id)
-                .setRequired(true);
-
-            const row = new ActionRowBuilder().addComponents(userIdInput);
-            modal.addComponents(row);
-
-            await interaction.showModal(modal);
-        }
-    }
-    
-    if (interaction.isModalSubmit()) {
-        if (interaction.customId === 'verification_modal') {
-            const userId = interaction.fields.getTextInputValue('user_id');
+            const userId = interaction.user.id;
             const guildId = interaction.guild.id;
             
-            // Verify the user ID matches the person submitting
-            if (userId !== interaction.user.id) {
-                await interaction.reply({
-                    content: '❌ **Error:** The User ID must match your own Discord account.',
-                    ephemeral: true
-                });
-                return;
-            }
-            
-            // Generate OAuth2 URL for this user
+            // Generate OAuth2 URL for this user - this will directly open Discord's authorization popup
             const oauthUrl = generateAuthURL(userId, guildId);
             
-            const embed = new EmbedBuilder()
-                .setTitle('🔐 Complete Your Authorization')
-                .setDescription(
-                    '**Click the link below to complete your backup authorization:**\n\n' +
-                    `[🔗 **Authorize Backup Protection**](${oauthUrl})\n\n` +
-                    '**What happens next:**\n' +
-                    '1. You\'ll be redirected to Discord\'s official authorization page\n' +
-                    '2. Click "Authorize" to grant the bot permission to re-add you\n' +
-                    '3. You\'ll receive a confirmation message\n' +
-                    '4. You\'re now protected from server raids!\n\n' +
-                    '*This authorization is secure and follows Discord\'s official OAuth2 standards.*'
-                )
-                .setColor(0x00FF00)
-                .setFooter({ text: 'This link is unique to you and expires in 10 minutes' })
-                .setTimestamp();
-            
+            // Reply with the direct OAuth URL - Discord will handle opening the authorization popup
             await interaction.reply({
-                embeds: [embed],
+                content: `🔐 **Opening Discord Authorization...**\n\n[Click here to authorize](${oauthUrl})`,
                 ephemeral: true
             });
+            
+            console.log(`🔗 Generated OAuth2 URL for ${interaction.user.username} (${userId}) in guild ${guildId}`);
         }
     }
 });
