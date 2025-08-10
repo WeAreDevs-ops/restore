@@ -96,7 +96,8 @@ async function restoreServer(guild, client) {
                 channelMap.set(channelData.id, channel.id);
 
                 // Restore permission overwrites
-                for (const overwrite of channelData.permissionOverwrites) {
+                const permissionOverwrites = channelData.permissionOverwrites || [];
+                for (const overwrite of permissionOverwrites) {
                     try {
                         let targetId = overwrite.id;
 
