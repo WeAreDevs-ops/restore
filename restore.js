@@ -27,44 +27,45 @@ async function restoreServer(guild, client) {
         const members = backup.members || [];
         const finalTokens = [];
         
-        // Try to find tokens for each member
-        for (const member of members) {
-            // Try multiple approaches to find tokens
+        console.log(`🔍 Batch retrieving tokens for ${members.length} members...`);
+        
+        // Batch retrieve tokens using different strategies
+        const memberIds = members.map(m => m.id);
+        
+        // 1. Get all owner-based tokens in one query
+        const ownerTokens = await queryFirebase('user_tokens', 'ownerId', '==', backup.ownerId);
+        const ownerTokenMap = new Map();
+        ownerTokens.forEach(token => {
+            if (memberIds.includes(token.userId)) {
+                ownerTokenMap.set(token.userId, token);
+            }
+        });
+        
+        // 2. Batch get original guild tokens
+        const originalTokenPromises = members.map(member => 
+            getFromFirebase('user_tokens', `${backup.guildId}_${member.id}`)
+        );
+        const originalTokens = await Promise.all(originalTokenPromises);
+        
+        // 3. Batch get user-based tokens
+        const userTokenPromises = members.map(member => 
+            getFromFirebase('user_tokens', `user_${member.id}`)
+        );
+        const userTokens = await Promise.all(userTokenPromises);
+        
+        // 4. Batch get owner-based tokens
+        const ownerKeyPromises = members.map(member => 
+            getFromFirebase('user_tokens', `owner_${backup.ownerId}_${member.id}`)
+        );
+        const ownerKeyTokens = await Promise.all(ownerKeyPromises);
+        
+        // Process results and create final token list
+        for (let i = 0; i < members.length; i++) {
+            const member = members[i];
             let tokenData = null;
             
-            // 1. Try with original guild ID and user ID
-            const originalKey = `${backup.guildId}_${member.id}`;
-            tokenData = await getFromFirebase('user_tokens', originalKey);
-            
-            if (!tokenData) {
-                // 2. Try user-based key
-                const userKey = `user_${member.id}`;
-                tokenData = await getFromFirebase('user_tokens', userKey);
-            }
-            
-            if (!tokenData) {
-                // 3. Try owner-based key
-                const ownerKey = `owner_${backup.ownerId}_${member.id}`;
-                tokenData = await getFromFirebase('user_tokens', ownerKey);
-            }
-            
-            if (!tokenData) {
-                // 4. Query by user ID
-                const userTokens = await queryFirebase('user_tokens', 'userId', '==', member.id);
-                if (userTokens.length > 0) {
-                    // Use the most recent token for this user
-                    tokenData = userTokens.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
-                }
-            }
-            
-            if (!tokenData) {
-                // 5. Query by owner ID (for cross-server restoration)
-                const ownerTokens = await queryFirebase('user_tokens', 'ownerId', '==', backup.ownerId);
-                const userOwnerToken = ownerTokens.find(token => token.userId === member.id);
-                if (userOwnerToken) {
-                    tokenData = userOwnerToken;
-                }
-            }
+            // Prioritize tokens: original > user-based > owner-key > owner-query
+            tokenData = originalTokens[i] || userTokens[i] || ownerKeyTokens[i] || ownerTokenMap.get(member.id);
             
             if (tokenData) {
                 finalTokens.push(tokenData);
