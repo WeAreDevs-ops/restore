@@ -2,7 +2,7 @@ const { saveToFirebase } = require('./firebase');
 const { ChannelType, PermissionFlagsBits } = require('discord.js');
 
 async function backupServer(guild) {
-    console.log(`📦 Starting member backup for server: ${guild.name} (${guild.id})`);
+    console.log(`Starting member backup for server: ${guild.name} (${guild.id})`);
 
     try {
         // Fetch all members
@@ -37,15 +37,15 @@ async function backupServer(guild) {
         const success = await saveToFirebase('server_backups', guild.id, backupData);
 
         if (success) {
-            console.log(`✅ Member backup completed for ${guild.name}. Saved ${memberData.length} members`);
+            console.log(`Member backup completed for ${guild.name}. Saved ${memberData.length} members`);
         } else {
-            console.log(`❌ Member backup failed for ${guild.name}`);
+            console.log(`Member backup failed for ${guild.name}`);
         }
 
         return success;
 
     } catch (error) {
-        console.error('❌ Error during member backup:', error);
+        console.error('Error during member backup:', error);
         return false;
     }
 }
@@ -78,12 +78,12 @@ async function backupMemberTokens(guildId, userId, tokens, ownerId = null) {
         }
 
         if (allSuccess) {
-            console.log(`🔐 Saved OAuth2 tokens for user ****${userId.slice(-4)} in guild ****${guildId.slice(-4)}`);
+            console.log(`Saved OAuth2 tokens for user ****${userId.slice(-4)} in guild ****${guildId.slice(-4)}`);
         }
 
         return allSuccess;
     } catch (error) {
-        console.error('❌ Error saving member tokens:', error);
+        console.error('Error saving member tokens:', error);
         return false;
     }
 }
