@@ -103,7 +103,6 @@ async function restoreServer(guild, client) {
                     console.log(`✅ Successfully re-added member: ${member.username.substring(0, 4)}****`);
                 } else {
                     console.log(`❌ Failed to add member: ${member.username.substring(0, 4)}****`);
-                }mber.username}`);
                 }
 
                 // Rate limiting for Discord API
