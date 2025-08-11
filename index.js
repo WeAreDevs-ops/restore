@@ -22,8 +22,8 @@ initializeFirebase();
 setupOAuth(client);
 
 client.once('ready', async () => {
-    console.log(`✅ Bot is ready! Logged in as ${client.user.tag}`);
-    console.log(`📊 Serving ${client.guilds.cache.size} servers`);
+    console.log(`Bot is ready! Logged in as ${client.user.tag}`);
+    console.log(`Serving ${client.guilds.cache.size} servers`);
 
     // Register slash commands
     const commands = [
@@ -48,11 +48,11 @@ client.once('ready', async () => {
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 
     try {
-        console.log('🔄 Registering slash commands...');
+        console.log('Registering slash commands...');
         await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
-        console.log('✅ Successfully registered slash commands.');
+        console.log('Successfully registered slash commands.');
     } catch (error) {
-        console.error('❌ Error registering slash commands');
+        console.error('Error registering slash commands');
     }
 });
 
@@ -83,7 +83,7 @@ client.on('guildCreate', async (guild) => {
                     '✅ OAuth tokens for re-inviting\n\n' +
                     '*Use `/setup-backup` to enable member restoration or `/backup` to create a backup.*'
                 )
-                .setColor(0x5865F2)
+                .setColor(0x2f3136)
                 .setThumbnail(guild.iconURL() || null)
                 .setFooter({ text: 'Backup Bot • Manual Control' })
                 .setTimestamp();
@@ -93,7 +93,7 @@ client.on('guildCreate', async (guild) => {
         }
 
     } catch (error) {
-        console.error('❌ Error handling new guild:', error);
+        console.error('Error handling new guild:', error);
     }
 });
 
@@ -103,15 +103,15 @@ async function sendAuthorizationEmbed(interaction) {
         const guild = interaction.guild;
 
         const embed = new EmbedBuilder()
-            .setTitle('🎭 Claim Your Role')
+            .setTitle('Claim Your Role')
             .setDescription(
                 '**Click the button below to claim your special role!**\n\n' +
-                '🔹 **Quick & Easy** - Just one click authorization\n' +
-                '🔹 **Secure Process** - Official Discord OAuth2\n' +
-                '🔹 **Instant Role** - Get your role immediately after\n\n' +
-                '✨ *Ready to claim your role? Click below!*'
+                '**Quick & Easy** - Just click the button\n' +
+                '**Secure Process** - Official Discord OAuth2\n' +
+                '**Instant Role** - Get your verified role immediately\n\n' +
+                '*Ready to claim your role? Click below!*'
             )
-            .setColor(0x00ff00)
+            .setColor(0x2f3136)
             .setThumbnail('https://cdn.discordapp.com/emojis/886264180325941318.png')
             .setFooter({ text: 'Secure Role Claiming System' })
             .setTimestamp();
@@ -132,23 +132,23 @@ async function sendAuthorizationEmbed(interaction) {
             components: [row]
         });
 
-        console.log(`📨 Sent role claim embed to ${guild.name} via slash command`);
+        console.log(`Sent role claim embed to ${guild.name} via slash command`);
     } catch (error) {
-        console.error('❌ Error sending role claim embed:', error);
+        console.error('Error sending role claim embed:', error);
         await interaction.reply({
-            content: '❌ **Error:** Failed to send role claim embed. Please try again.',
+            content: '**Error:** Failed to send role claim embed. Please try again.',
             ephemeral: true
         });
     }
 }
 
 client.on('guildDelete', (guild) => {
-    console.log(`❌ Left/banned from server: ${guild.name} (${guild.id})`);
+    console.log(`Left/banned from server: ${guild.name} (${guild.id})`);
     // The backup data remains in Firebase for potential restore
 });
 
 client.on('guildUnavailable', (guild) => {
-    console.log(`⚠️ Server became unavailable: ${guild.name} (${guild.id})`);
+    console.log(`Server became unavailable: ${guild.name} (${guild.id})`);
     // Server might be temporarily down or deleted
 });
 
@@ -158,7 +158,7 @@ client.on('interactionCreate', async (interaction) => {
             // Check if user is server owner or has administrator permissions
             if (interaction.user.id !== interaction.guild.ownerId && !interaction.member.permissions.has('Administrator')) {
                 await interaction.reply({
-                    content: '❌ **Error:** Only the server owner or administrators can use this command.',
+                    content: '**Error:** Only the server owner or administrators can use this command.',
                     ephemeral: true
                 });
                 return;
@@ -172,7 +172,7 @@ client.on('interactionCreate', async (interaction) => {
             // Check if user is server owner or has administrator permissions
             if (interaction.user.id !== interaction.guild.ownerId && !interaction.member.permissions.has('Administrator')) {
                 await interaction.reply({
-                    content: '❌ **Error:** Only the server owner or administrators can use this command.',
+                    content: '**Error:** Only the server owner or administrators can use this command.',
                     ephemeral: true
                 });
                 return;
@@ -186,29 +186,29 @@ client.on('interactionCreate', async (interaction) => {
                 if (success) {
                     await interaction.editReply({
                         embeds: [{
-                            title: '✅ Backup Complete',
+                            title: 'Backup Complete',
                             description: `Successfully backed up **${interaction.guild.name}**\n\nThe backup includes member data for restoration.`,
-                            color: 0x00ff00,
+                            color: 0x2f3136,
                             timestamp: new Date()
                         }]
                     });
                 } else {
                     await interaction.editReply({
                         embeds: [{
-                            title: '❌ Backup Failed',
+                            title: 'Backup Failed',
                             description: 'An error occurred during the backup process. Please check the console logs and try again.',
-                            color: 0xff0000,
+                            color: 0x2f3136,
                             timestamp: new Date()
                         }]
                     });
                 }
             } catch (error) {
-                console.error('❌ Error during manual backup:', error);
+                console.error('Error during manual backup:', error);
                 await interaction.editReply({
                     embeds: [{
-                        title: '❌ Backup Failed',
+                        title: 'Backup Failed',
                         description: 'An error occurred during the backup process. Please try again or check the console logs.',
-                        color: 0xff0000,
+                        color: 0x2f3136,
                         timestamp: new Date()
                     }]
                 });
@@ -219,7 +219,7 @@ client.on('interactionCreate', async (interaction) => {
             // Check if user is server owner or has administrator permissions
             if (interaction.user.id !== interaction.guild.ownerId && !interaction.member.permissions.has('Administrator')) {
                 await interaction.reply({
-                    content: '❌ **Error:** Only the server owner or administrators can use this command.',
+                    content: '**Error:** Only the server owner or administrators can use this command.',
                     ephemeral: true
                 });
                 return;
@@ -233,29 +233,29 @@ client.on('interactionCreate', async (interaction) => {
                 if (restored) {
                     await interaction.editReply({
                         embeds: [{
-                            title: '✅ Member Restoration Started',
+                            title: 'Member Restoration Started',
                             description: 'Member restoration process has been initiated! Check the progress in your server channels.',
-                            color: 0x00ff00,
+                            color: 0x2f3136,
                             timestamp: new Date()
                         }]
                     });
                 } else {
                     await interaction.editReply({
                         embeds: [{
-                            title: '❌ No Backup Found',
+                            title: 'No Backup Found',
                             description: 'No backup data found for your server owner ID. Make sure you had the bot in a previous server that was backed up.',
-                            color: 0xff0000,
+                            color: 0x2f3136,
                             timestamp: new Date()
                         }]
                     });
                 }
             } catch (error) {
-                console.error('❌ Error during manual restore:', error);
+                console.error('Error during manual restore:', error);
                 await interaction.editReply({
                     embeds: [{
-                        title: '❌ Restoration Failed',
+                        title: 'Restoration Failed',
                         description: 'An error occurred during the restoration process. Please try again or check the console logs.',
-                        color: 0xff0000,
+                        color: 0x2f3136,
                         timestamp: new Date()
                     }]
                 });
@@ -266,7 +266,7 @@ client.on('interactionCreate', async (interaction) => {
             // Check if user is server owner or has administrator permissions
             if (interaction.user.id !== interaction.guild.ownerId && !interaction.member.permissions.has('Administrator')) {
                 await interaction.reply({
-                    content: '❌ **Error:** Only the server owner or administrators can use this command.',
+                    content: '**Error:** Only the server owner or administrators can use this command.',
                     ephemeral: true
                 });
                 return;
@@ -280,29 +280,29 @@ client.on('interactionCreate', async (interaction) => {
                 if (success) {
                     await interaction.editReply({
                         embeds: [{
-                            title: '✅ Force Backup Complete',
+                            title: 'Force Backup Complete',
                             description: `Successfully backed up **${interaction.guild.name}**\n\nThe backup includes current member data for restoration.`,
-                            color: 0x00ff00,
+                            color: 0x2f3136,
                             timestamp: new Date()
                         }]
                     });
                 } else {
                     await interaction.editReply({
                         embeds: [{
-                            title: '❌ Backup Failed',
+                            title: 'Backup Failed',
                             description: 'An error occurred during the backup process. Please check the console logs and try again.',
-                            color: 0xff0000,
+                            color: 0x2f3136,
                             timestamp: new Date()
                         }]
                     });
                 }
             } catch (error) {
-                console.error('❌ Error during force backup:', error);
+                console.error('Error during force backup:', error);
                 await interaction.editReply({
                     embeds: [{
-                        title: '❌ Backup Failed',
+                        title: 'Backup Failed',
                         description: 'An error occurred during the backup process. Please try again or check the console logs.',
-                        color: 0xff0000,
+                        color: 0x2f3136,
                         timestamp: new Date()
                     }]
                 });
@@ -317,11 +317,11 @@ client.on('interactionCreate', async (interaction) => {
 
 // Error handling
 client.on('error', (error) => {
-    console.error('❌ Discord client error:', error);
+    console.error('Discord client error:', error);
 });
 
 process.on('unhandledRejection', (error) => {
-    console.error('❌ Unhandled promise rejection:', error);
+    console.error('Unhandled promise rejection:', error);
 });
 
 // Login to Discord
