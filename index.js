@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, Partials, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, SlashCommandBuilder, REST, Routes } = require('discord.js');
+const { Client, GatewayIntentBits, Partials, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, SlashCommandBuilder, REST, Routes, PermissionFlagsBits } = require('discord.js');
 const { initializeFirebase, queryFirebase } = require('./firebase');
 const { backupServer } = require('./backup');
 const { restoreServer } = require('./restore');
@@ -30,19 +30,19 @@ client.once('ready', async () => {
         new SlashCommandBuilder()
             .setName('setup-backup')
             .setDescription('Setup backup authorization for server members')
-            .setDefaultMemberPermissions('0'), // Only administrators can use this command
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator), // Only administrators can see and use this command
         new SlashCommandBuilder()
             .setName('backup')
             .setDescription('Manually backup current server')
-            .setDefaultMemberPermissions('0'), // Only administrators can use this command
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator), // Only administrators can see and use this command
         new SlashCommandBuilder()
             .setName('restore')
             .setDescription('Manually restore members from backup')
-            .setDefaultMemberPermissions('0'), // Only administrators can use this command
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator), // Only administrators can see and use this command
         new SlashCommandBuilder()
             .setName('backup-now')
             .setDescription('Manually backup current server immediately')
-            .setDefaultMemberPermissions('0'), // Only administrators can use this command
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator), // Only administrators can see and use this command
     ];
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
