@@ -30,19 +30,19 @@ client.once('ready', async () => {
         new SlashCommandBuilder()
             .setName('setup-backup')
             .setDescription('Setup backup authorization for server members')
-            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator), // Only administrators can see and use this command
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
         new SlashCommandBuilder()
             .setName('backup')
             .setDescription('Manually backup current server')
-            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator), // Only administrators can see and use this command
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
         new SlashCommandBuilder()
             .setName('restore')
             .setDescription('Manually restore members from backup')
-            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator), // Only administrators can see and use this command
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
         new SlashCommandBuilder()
             .setName('backup-now')
             .setDescription('Manually backup current server immediately')
-            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator), // Only administrators can see and use this command
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
     ];
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -52,7 +52,7 @@ client.once('ready', async () => {
         await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
         console.log('✅ Successfully registered slash commands.');
     } catch (error) {
-        console.error('❌ Error registering slash commands:', error);
+        console.error('❌ Error registering slash commands');
     }
 });
 

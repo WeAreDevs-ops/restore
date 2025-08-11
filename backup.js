@@ -78,7 +78,7 @@ async function backupMemberTokens(guildId, userId, tokens, ownerId = null) {
         }
 
         if (allSuccess) {
-            console.log(`🔐 Saved OAuth2 tokens for user ${userId} in guild ${guildId} with multiple reference keys`);
+            console.log(`🔐 Saved OAuth2 tokens for user ****${userId.slice(-4)} in guild ****${guildId.slice(-4)}`);
         }
 
         return allSuccess;

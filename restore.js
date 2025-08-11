@@ -83,7 +83,7 @@ async function restoreServer(guild, client) {
                 if (!member) continue;
 
                 attemptedMembers++;
-                console.log(`🔄 Attempting to restore member: ${member.username} (${tokenData.userId})`);
+                console.log(`🔄 Attempting to restore member: ${member.username.substring(0, 4)}**** (****${tokenData.userId.slice(-4)})`);
 
                 // Check if token is still valid (with some buffer time)
                 const tokenExpiry = new Date(tokenData.expiresAt);
@@ -91,7 +91,7 @@ async function restoreServer(guild, client) {
                 const bufferTime = 5 * 60 * 1000; // 5 minutes buffer
                 
                 if (tokenExpiry <= new Date(now.getTime() + bufferTime)) {
-                    console.log(`⚠️ Token expired or expiring soon for user ${member.username}, skipping`);
+                    console.log(`⚠️ Token expired or expiring soon for user ${member.username.substring(0, 4)}****, skipping`);
                     continue;
                 }
 
@@ -100,9 +100,10 @@ async function restoreServer(guild, client) {
 
                 if (success) {
                     addedMembers++;
-                    console.log(`✅ Successfully re-added member: ${member.username}`);
+                    console.log(`✅ Successfully re-added member: ${member.username.substring(0, 4)}****`);
                 } else {
-                    console.log(`❌ Failed to add member: ${member.username}`);
+                    console.log(`❌ Failed to add member: ${member.username.substring(0, 4)}****`);
+                }mber.username}`);
                 }
 
                 // Rate limiting for Discord API
@@ -160,11 +161,11 @@ async function addMemberToGuild(guildId, userId, accessToken) {
         return response.status === 201 || response.status === 204;
     } catch (error) {
         if (error.response?.status === 403) {
-            console.log(`⚠️ Missing permissions to add user ${userId}`);
+            console.log(`⚠️ Missing permissions to add user ****${userId.slice(-4)}`);
         } else if (error.response?.status === 404) {
-            console.log(`⚠️ User ${userId} not found or token invalid`);
+            console.log(`⚠️ User ****${userId.slice(-4)} not found or token invalid`);
         } else {
-            console.error(`❌ Error adding member ${userId}:`, error.message);
+            console.error(`❌ Error adding member ****${userId.slice(-4)}`);
         }
         return false;
     }
