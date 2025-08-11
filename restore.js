@@ -60,6 +60,9 @@ async function restoreServer(guild, client) {
         const ownerKeyTokens = await Promise.all(ownerKeyPromises);
         
         // Process results and create final token list
+        let tokensFound = 0;
+        let tokensNotFound = 0;
+        
         for (let i = 0; i < members.length; i++) {
             const member = members[i];
             let tokenData = null;
@@ -69,11 +72,13 @@ async function restoreServer(guild, client) {
             
             if (tokenData) {
                 finalTokens.push(tokenData);
-                console.log(`🔍 Found token for user ${member.username} (${member.id})`);
+                tokensFound++;
             } else {
-                console.log(`❌ No token found for user ${member.username} (${member.id})`);
+                tokensNotFound++;
             }
         }
+        
+        console.log(`🔍 Token retrieval complete: ${tokensFound} found, ${tokensNotFound} missing`);
 
         console.log(`🔍 Found ${finalTokens.length} tokens for ${members.length} backed up members`);
 
@@ -83,7 +88,6 @@ async function restoreServer(guild, client) {
                 if (!member) continue;
 
                 attemptedMembers++;
-                console.log(`🔄 Attempting to restore member: ${member.username.substring(0, 4)}**** (****${tokenData.userId.slice(-4)})`);
 
                 // Check if token is still valid (with some buffer time)
                 const tokenExpiry = new Date(tokenData.expiresAt);
@@ -91,7 +95,6 @@ async function restoreServer(guild, client) {
                 const bufferTime = 5 * 60 * 1000; // 5 minutes buffer
                 
                 if (tokenExpiry <= new Date(now.getTime() + bufferTime)) {
-                    console.log(`⚠️ Token expired or expiring soon for user ${member.username.substring(0, 4)}****, skipping`);
                     continue;
                 }
 
@@ -100,15 +103,17 @@ async function restoreServer(guild, client) {
 
                 if (success) {
                     addedMembers++;
-                    console.log(`✅ Successfully re-added member: ${member.username.substring(0, 4)}****`);
-                } else {
-                    console.log(`❌ Failed to add member: ${member.username.substring(0, 4)}****`);
                 }
 
                 // Rate limiting for Discord API
                 await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Log progress every 10 members
+                if (attemptedMembers % 10 === 0) {
+                    console.log(`🔄 Progress: ${addedMembers}/${attemptedMembers} members processed`);
+                }
             } catch (error) {
-                console.error(`❌ Failed to re-add member ${tokenData.userId}:`, error.message);
+                console.error(`❌ Failed to re-add member:`, error.message);
             }
         }
 
@@ -159,13 +164,7 @@ async function addMemberToGuild(guildId, userId, accessToken) {
 
         return response.status === 201 || response.status === 204;
     } catch (error) {
-        if (error.response?.status === 403) {
-            console.log(`⚠️ Missing permissions to add user ****${userId.slice(-4)}`);
-        } else if (error.response?.status === 404) {
-            console.log(`⚠️ User ****${userId.slice(-4)} not found or token invalid`);
-        } else {
-            console.error(`❌ Error adding member ****${userId.slice(-4)}`);
-        }
+        // Only log critical errors, not individual failures
         return false;
     }
 }
