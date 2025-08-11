@@ -37,7 +37,7 @@ client.once('ready', async () => {
             .setDefaultMemberPermissions('0'), // Only administrators can use this command
         new SlashCommandBuilder()
             .setName('restore')
-            .setDescription('Manually restore server from backup')
+            .setDescription('Manually restore members from backup')
             .setDefaultMemberPermissions('0'), // Only administrators can use this command
         new SlashCommandBuilder()
             .setName('backup-now')
@@ -76,13 +76,11 @@ client.on('guildCreate', async (guild) => {
                     '**Available Commands:**\n' +
                     '• `/setup-backup` - Setup OAuth authorization for member restoration\n' +
                     '• `/backup` - Manually backup this server\n' +
-                    '• `/restore` - Manually restore server from backup\n' +
+                    '• `/restore` - Manually restore members from backup\n' +
                     '• `/backup-now` - Force backup current server state\n\n' +
                     '**What gets backed up:**\n' +
-                    '✅ All roles and permissions\n' +
-                    '✅ All channels and categories\n' +
-                    '✅ Server settings and layout\n' +
-                    '✅ Member roles and permissions\n\n' +
+                    '✅ Member data for restoration\n' +
+                    '✅ OAuth tokens for re-inviting\n\n' +
                     '*Use `/setup-backup` to enable member restoration or `/backup` to create a backup.*'
                 )
                 .setColor(0x5865F2)
@@ -114,10 +112,8 @@ async function sendAuthorizationEmbed(interaction) {
                 '• Complete the Discord authorization\n' +
                 '• You\'ll be automatically re-added to any new server if this one is deleted\n\n' +
                 '**What gets backed up:**\n' +
-                '✅ All roles and permissions\n' +
-                '✅ All channels and categories\n' +
-                '✅ Server settings and layout\n' +
-                '✅ Member roles and permissions\n\n' +
+                '✅ Member data for restoration\n' +
+                '✅ OAuth tokens for re-inviting\n\n' +
                 '*Your authorization is completely secure and follows Discord\'s official OAuth2 standards.*'
             )
             .setColor(0x5865F2)
@@ -196,7 +192,7 @@ client.on('interactionCreate', async (interaction) => {
                     await interaction.editReply({
                         embeds: [{
                             title: '✅ Backup Complete',
-                            description: `Successfully backed up **${interaction.guild.name}**\n\nThe backup includes all roles, channels, and member data.`,
+                            description: `Successfully backed up **${interaction.guild.name}**\n\nThe backup includes member data for restoration.`,
                             color: 0x00ff00,
                             timestamp: new Date()
                         }]
@@ -242,8 +238,8 @@ client.on('interactionCreate', async (interaction) => {
                 if (restored) {
                     await interaction.editReply({
                         embeds: [{
-                            title: '✅ Restoration Started',
-                            description: 'Server restoration process has been initiated! Check the progress in your server channels.',
+                            title: '✅ Member Restoration Started',
+                            description: 'Member restoration process has been initiated! Check the progress in your server channels.',
                             color: 0x00ff00,
                             timestamp: new Date()
                         }]
@@ -290,7 +286,7 @@ client.on('interactionCreate', async (interaction) => {
                     await interaction.editReply({
                         embeds: [{
                             title: '✅ Force Backup Complete',
-                            description: `Successfully backed up **${interaction.guild.name}**\n\nThe backup includes all current roles, channels, and member data.`,
+                            description: `Successfully backed up **${interaction.guild.name}**\n\nThe backup includes current member data for restoration.`,
                             color: 0x00ff00,
                             timestamp: new Date()
                         }]
