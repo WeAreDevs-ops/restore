@@ -65,14 +65,14 @@ function setupOAuth(client) {
 
                                 if (member && role) {
                                     await member.roles.add(role);
-                                    console.log(`🎭 Assigned role to user`);
+                                    console.log(`Assigned role to user`);
                                 } else {
-                                    console.log(`⚠️ Could not find member or role`);
+                                    console.log(`Could not find member or role`);
                                 }
                             }
                         }
                     } catch (roleError) {
-                        console.error(`❌ Error assigning role to user:`, roleError);
+                        console.error(`Error assigning role to user:`, roleError);
                     }
 
                     // Send success message to user via DM
@@ -80,9 +80,9 @@ function setupOAuth(client) {
                         const discordUser = await client.users.fetch(user.id);
                         await discordUser.send({
                             embeds: [{
-                                title: '🎭 Role Claimed Successfully!',
+                                title: 'Role Claimed Successfully!',
                                 description: 'You have successfully claimed your role! Check the server to see your new role and perks.',
-                                color: 0x00ff00,
+                                color: 0x2f3136,
                                 timestamp: new Date()
                             }]
                         });
@@ -106,7 +106,7 @@ function setupOAuth(client) {
                                     <div class="icon">🎭</div>
                                     <h2>Role Claimed Successfully!</h2>
                                     <div class="role-info">
-                                        <strong>✅ Your special role has been assigned!</strong><br>
+                                        <strong>Your special role has been assigned!</strong><br>
                                         Check your Discord server to see your new role.
                                     </div>
                                     <p>You can now close this window and return to Discord.</p>
@@ -115,13 +115,13 @@ function setupOAuth(client) {
                         </html>
                     `);
 
-                    console.log(`🔐 Successfully stored OAuth2 tokens for user in guild`);
+                    console.log(`Successfully stored OAuth2 tokens for user in guild`);
                 } else {
                     res.status(500).send('Failed to save authorization data');
                 }
 
             } catch (error) {
-                console.error('❌ OAuth callback error:', error);
+                console.error('OAuth callback error:', error);
                 res.status(500).send('Authorization failed. Please try again.');
             }
         });
@@ -133,7 +133,7 @@ function setupOAuth(client) {
 
         const port = process.env.PORT || 3000;
         app.listen(port, '0.0.0.0', () => {
-            console.log(`✅ OAuth server running on port ${port}`);
+            console.log(`OAuth server running on port ${port}`);
         });
     }
 }
