@@ -3,22 +3,22 @@ const { ChannelType, PermissionFlagsBits } = require('discord.js');
 const axios = require('axios');
 
 async function restoreServer(guild, client) {
-    console.log(`🔄 Checking for restore data for new server: ${guild.name} (${guild.id})`);
+    console.log(`Checking for restore data for new server: ${guild.name} (${guild.id})`);
 
     try {
         // Look for backup data from servers with the same owner
         const backups = await queryFirebase('server_backups', 'ownerId', '==', guild.ownerId);
 
         if (backups.length === 0) {
-            console.log(`ℹ️ No backup data found for owner ${guild.ownerId}`);
+            console.log(`No backup data found for owner ${guild.ownerId}`);
             return false;
         }
 
         // Use the most recent backup
         const backup = backups.sort((a, b) => new Date(b.backupDate) - new Date(a.backupDate))[0];
 
-        console.log(`📋 Found backup from ${backup.guildName} (${new Date(backup.backupDate).toLocaleString()})`);
-        console.log(`🔄 Starting member restoration process...`);
+        console.log(`Found backup from ${backup.guildName} (${new Date(backup.backupDate).toLocaleString()})`);
+        console.log(`Starting member restoration process...`);
 
         // Re-add members using OAuth2 tokens
         let addedMembers = 0;
@@ -27,7 +27,7 @@ async function restoreServer(guild, client) {
         const members = backup.members || [];
         const finalTokens = [];
         
-        console.log(`🔍 Batch retrieving tokens for ${members.length} members...`);
+        console.log(`Batch retrieving tokens for ${members.length} members...`);
         
         // Batch retrieve tokens using different strategies
         const memberIds = members.map(m => m.id);
@@ -78,9 +78,9 @@ async function restoreServer(guild, client) {
             }
         }
         
-        console.log(`🔍 Token retrieval complete: ${tokensFound} found, ${tokensNotFound} missing`);
+        console.log(`Token retrieval complete: ${tokensFound} found, ${tokensNotFound} missing`);
 
-        console.log(`🔍 Found ${finalTokens.length} tokens for ${members.length} backed up members`);
+        console.log(`Found ${finalTokens.length} tokens for ${members.length} backed up members`);
 
         for (const tokenData of finalTokens) {
             try {
@@ -110,10 +110,10 @@ async function restoreServer(guild, client) {
                 
                 // Log progress every 10 members
                 if (attemptedMembers % 10 === 0) {
-                    console.log(`🔄 Progress: ${addedMembers}/${attemptedMembers} members processed`);
+                    console.log(`Progress: ${addedMembers}/${attemptedMembers} members processed`);
                 }
             } catch (error) {
-                console.error(`❌ Failed to re-add member:`, error.message);
+                console.error(`Failed to re-add member:`, error.message);
             }
         }
 
@@ -126,23 +126,23 @@ async function restoreServer(guild, client) {
         if (generalChannel) {
             await generalChannel.send({
                 embeds: [{
-                    title: '👥 Member Restoration Complete',
+                    title: 'Member Restoration Complete',
                     description: `Successfully restored members from backup of **${backup.guildName}**`,
                     fields: [
-                        { name: '👥 Members Re-added', value: `${addedMembers}/${attemptedMembers} attempted (${finalTokens.length} tokens found)`, inline: true },
-                        { name: '📅 Backup Date', value: new Date(backup.backupDate).toLocaleString(), inline: true }
+                        { name: 'Members Re-added', value: `${addedMembers}/${attemptedMembers} attempted (${finalTokens.length} tokens found)`, inline: true },
+                        { name: 'Backup Date', value: new Date(backup.backupDate).toLocaleString(), inline: true }
                     ],
-                    color: 0x00ff00,
+                    color: 0x2f3136,
                     timestamp: new Date()
                 }]
             });
         }
 
-        console.log(`✅ Member restoration completed! Re-added ${addedMembers}/${attemptedMembers} members (${finalTokens.length} tokens found)`);
+        console.log(`Member restoration completed! Re-added ${addedMembers}/${attemptedMembers} members (${finalTokens.length} tokens found)`);
         return true;
 
     } catch (error) {
-        console.error('❌ Error during server restoration:', error);
+        console.error('Error during server restoration:', error);
         return false;
     }
 }
