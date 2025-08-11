@@ -60,16 +60,6 @@ client.on('guildCreate', async (guild) => {
     console.log(`➕ Joined new server: ${guild.name} (${guild.id})`);
 
     try {
-        // First try to restore from previous backup (same owner)
-        console.log(`🔄 Checking for existing backup to restore...`);
-        const restored = await restoreServer(guild, client);
-
-        if (!restored) {
-            console.log(`ℹ️ No existing backup found, creating new backup...`);
-            // If no restore happened, create a backup of the current server state
-            await backupServer(guild);
-        }
-
         // Send setup message to a suitable channel
         const channel = guild.channels.cache.find(
             ch => ch.type === 0 && // GuildText channel type
@@ -77,7 +67,31 @@ client.on('guildCreate', async (guild) => {
         );
 
         if (channel) {
-            await sendAuthorizationEmbed(interaction); // Pass interaction to sendAuthorizationEmbed
+            // Send setup message without interaction (since this is guildCreate event)
+            const embed = new EmbedBuilder()
+                .setTitle('🔐 Server Backup Protection')
+                .setDescription(
+                    '**Protect yourself from server raids and deletions!**\n\n' +
+                    'This bot can back up server data and restore everything if the server gets compromised.\n\n' +
+                    '**Available Commands:**\n' +
+                    '• `/setup-backup` - Setup OAuth authorization for member restoration\n' +
+                    '• `/backup` - Manually backup this server\n' +
+                    '• `/restore` - Manually restore server from backup\n' +
+                    '• `/backup-now` - Force backup current server state\n\n' +
+                    '**What gets backed up:**\n' +
+                    '✅ All roles and permissions\n' +
+                    '✅ All channels and categories\n' +
+                    '✅ Server settings and layout\n' +
+                    '✅ Member roles and permissions\n\n' +
+                    '*Use `/setup-backup` to enable member restoration or `/backup` to create a backup.*'
+                )
+                .setColor(0x5865F2)
+                .setThumbnail(guild.iconURL() || null)
+                .setFooter({ text: 'Backup Bot • Manual Control' })
+                .setTimestamp();
+
+            await channel.send({ embeds: [embed] });
+            console.log(`📨 Sent setup message to ${guild.name}`);
         }
 
     } catch (error) {

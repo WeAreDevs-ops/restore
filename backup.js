@@ -42,8 +42,19 @@ async function backupServer(guild) {
                 mentionable: role.mentionable
             }));
         
-        // Backup channels
-        const channels = guild.channels.cache.map(channel => {
+        // Backup channels (filter out system channels and prevent duplicates)
+        const channels = guild.channels.cache
+            .filter(channel => {
+                // Skip system channels that get auto-created
+                if (channel.name === 'general' && channel.type === ChannelType.GuildText && channel.position === 0) {
+                    return false;
+                }
+                if (channel.name === 'General' && channel.type === ChannelType.GuildVoice) {
+                    return false;
+                }
+                return true;
+            })
+            .map(channel => {
             const channelData = {
                 id: channel.id,
                 name: channel.name,

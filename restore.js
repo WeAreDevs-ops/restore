@@ -70,10 +70,21 @@ async function restoreServer(guild, client) {
             }
         }
 
-        // Create other channels
+        // Create other channels (skip if similar channel already exists)
         const otherChannels = channels.filter(ch => ch.type !== ChannelType.GuildCategory);
         for (const channelData of otherChannels) {
             try {
+                // Check if a channel with similar name already exists
+                const existingChannel = guild.channels.cache.find(ch => 
+                    ch.name.toLowerCase() === channelData.name.toLowerCase() && 
+                    ch.type === channelData.type
+                );
+                
+                if (existingChannel) {
+                    console.log(`⏭️ Skipping channel ${channelData.name} - already exists`);
+                    channelMap.set(channelData.id, existingChannel.id);
+                    continue;
+                }
                 const channelOptions = {
                     name: channelData.name,
                     type: channelData.type,
