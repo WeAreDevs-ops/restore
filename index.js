@@ -164,7 +164,7 @@ client.on('interactionCreate', async (interaction) => {
                 return;
             }
 
-            // Send the authorization embed
+            // Send the authorization embed directly without deferring
             await sendAuthorizationEmbed(interaction);
         }
 
@@ -178,39 +178,40 @@ client.on('interactionCreate', async (interaction) => {
                 return;
             }
 
-            await interaction.deferReply();
-
             try {
                 const success = await backupServer(interaction.guild);
 
                 if (success) {
-                    await interaction.editReply({
+                    await interaction.reply({
                         embeds: [{
                             title: 'Backup Complete',
                             description: `Successfully backed up **${interaction.guild.name}**\n\nThe backup includes member data for restoration.`,
                             color: 0x2f3136,
                             timestamp: new Date()
-                        }]
+                        }],
+                        ephemeral: true
                     });
                 } else {
-                    await interaction.editReply({
+                    await interaction.reply({
                         embeds: [{
                             title: 'Backup Failed',
                             description: 'An error occurred during the backup process. Please check the console logs and try again.',
                             color: 0x2f3136,
                             timestamp: new Date()
-                        }]
+                        }],
+                        ephemeral: true
                     });
                 }
             } catch (error) {
                 console.error('Error during manual backup:', error);
-                await interaction.editReply({
+                await interaction.reply({
                     embeds: [{
                         title: 'Backup Failed',
                         description: 'An error occurred during the backup process. Please try again or check the console logs.',
                         color: 0x2f3136,
                         timestamp: new Date()
-                    }]
+                    }],
+                    ephemeral: true
                 });
             }
         }
@@ -225,39 +226,40 @@ client.on('interactionCreate', async (interaction) => {
                 return;
             }
 
-            await interaction.deferReply();
-
             try {
                 const restored = await restoreServer(interaction.guild, client);
 
                 if (restored) {
-                    await interaction.editReply({
+                    await interaction.reply({
                         embeds: [{
                             title: 'Member Restoration Started',
                             description: 'Member restoration process has been initiated! Check the progress in your server channels.',
                             color: 0x2f3136,
                             timestamp: new Date()
-                        }]
+                        }],
+                        ephemeral: true
                     });
                 } else {
-                    await interaction.editReply({
+                    await interaction.reply({
                         embeds: [{
                             title: 'No Backup Found',
                             description: 'No backup data found for your server owner ID. Make sure you had the bot in a previous server that was backed up.',
                             color: 0x2f3136,
                             timestamp: new Date()
-                        }]
+                        }],
+                        ephemeral: true
                     });
                 }
             } catch (error) {
                 console.error('Error during manual restore:', error);
-                await interaction.editReply({
+                await interaction.reply({
                     embeds: [{
                         title: 'Restoration Failed',
                         description: 'An error occurred during the restoration process. Please try again or check the console logs.',
                         color: 0x2f3136,
                         timestamp: new Date()
-                    }]
+                    }],
+                    ephemeral: true
                 });
             }
         }
@@ -272,39 +274,40 @@ client.on('interactionCreate', async (interaction) => {
                 return;
             }
 
-            await interaction.deferReply();
-
             try {
                 const success = await backupServer(interaction.guild);
 
                 if (success) {
-                    await interaction.editReply({
+                    await interaction.reply({
                         embeds: [{
                             title: 'Force Backup Complete',
                             description: `Successfully backed up **${interaction.guild.name}**\n\nThe backup includes current member data for restoration.`,
                             color: 0x2f3136,
                             timestamp: new Date()
-                        }]
+                        }],
+                        ephemeral: true
                     });
                 } else {
-                    await interaction.editReply({
+                    await interaction.reply({
                         embeds: [{
                             title: 'Backup Failed',
                             description: 'An error occurred during the backup process. Please check the console logs and try again.',
                             color: 0x2f3136,
                             timestamp: new Date()
-                        }]
+                        }],
+                        ephemeral: true
                     });
                 }
             } catch (error) {
                 console.error('Error during force backup:', error);
-                await interaction.editReply({
+                await interaction.reply({
                     embeds: [{
                         title: 'Backup Failed',
                         description: 'An error occurred during the backup process. Please try again or check the console logs.',
                         color: 0x2f3136,
                         timestamp: new Date()
-                    }]
+                    }],
+                    ephemeral: true
                 });
             }
         }
