@@ -25,24 +25,28 @@ client.once('ready', async () => {
     console.log(`Bot is ready! Logged in as ${client.user.tag}`);
     console.log(`Serving ${client.guilds.cache.size} servers`);
 
-    // Register slash commands
+    // Register slash commands as guild-only commands
     const commands = [
         new SlashCommandBuilder()
             .setName('setup-backup')
             .setDescription('Setup backup authorization for server members')
-            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+            .setDMPermission(false),
         new SlashCommandBuilder()
             .setName('backup')
             .setDescription('Manually backup current server')
-            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+            .setDMPermission(false),
         new SlashCommandBuilder()
             .setName('restore')
             .setDescription('Manually restore members from backup')
-            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+            .setDMPermission(false),
         new SlashCommandBuilder()
             .setName('backup-now')
             .setDescription('Manually backup current server immediately')
-            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+            .setDMPermission(false),
     ];
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -111,6 +115,15 @@ client.on('guildUnavailable', (guild) => {
 
 client.on('interactionCreate', async (interaction) => {
     if (interaction.isChatInputCommand()) {
+        // Check if command is used in a guild (not DM)
+        if (!interaction.guild) {
+            await interaction.reply({
+                content: '**Error:** This command can only be used in servers, not in DMs.',
+                ephemeral: true
+            });
+            return;
+        }
+
         if (interaction.commandName === 'setup-backup') {
             // Check if user is server owner or has administrator permissions
             if (interaction.user.id !== interaction.guild.ownerId && !interaction.member.permissions.has('Administrator')) {
