@@ -118,40 +118,24 @@ client.on('guildUnavailable', (guild) => {
     // Server might be temporarily down or deleted
 });
 
+// Function to strip all custom emojis from text
+function stripCustomEmojis(text) {
+    if (!text) return text;
+
+    // Remove real Discord custom emojis like <:name:123456789012345678> or <a:name:123456789012345678>
+    text = text.replace(/<a?:\w+:\d+>/g, '');
+
+    // Remove colon-style fake emoji like :redmember: or :1981redmember:
+    text = text.replace(/:[a-zA-Z0-9_]+:/g, '');
+
+    return text.trim();
+}
+
 // Function to filter sensitive information from embeds
 function filterSensitiveInfo(embed) {
     if (!embed) return null;
 
-    // Custom emoji to Unicode mapping
-    const emojiMapping = {
-        // Member emojis
-        '1981redmember': '🔴',
-
-        // Robux related emojis
-        '1839_robux': '💰',
-        '1839_Robux': '💰',
-        '3999robux': '💰',
-
-        // Premium emoji
-        'premium': '⭐',
-
-        // Collectible emojis
-        'RedStar': '🌟',
-        'HeadlessHorseman': '🐴',
-        'korblox': '💀',
-        'verifiedhat': '✅',
-
-        // Activity/Game emojis
-        'play': '▶️',
-        'iconsbank': '🏦',
-        'backpack4': '🎒',
-
-        // Generic fallbacks
-        'roblox': '🎮',
-        'robux': '💰'
-    };
-
-    // Helper function to clean text of sensitive content and replace custom emojis
+    // Helper function to clean text of sensitive content and remove custom emojis
     function cleanSensitiveText(text) {
         if (!text) return text;
 
@@ -162,20 +146,8 @@ function filterSensitiveInfo(embed) {
             .replace(/robloxsecurity/gi, '[FILTERED]')
             .replace(/roblosecurity/gi, '[FILTERED]');
 
-        // Replace custom emojis with Unicode equivalents instead of removing them
-        cleanText = cleanText
-            .replace(/:([a-zA-Z0-9_]+):/g, (match, emojiName) => {
-                // Check if the emoji name exists in our mapping
-                if (emojiMapping[emojiName]) {
-                    return emojiMapping[emojiName];
-                }
-                // Fallback for other custom emojis - always convert to Unicode
-                return '📎';
-            })
-            // Discord emoji mentions
-            .replace(/<:[^:>]+:[0-9]+>/g, '📎')
-            .replace(/<a:[^:>]+:[0-9]+>/g, '📎');
-
+        // Strip all custom emojis
+        cleanText = stripCustomEmojis(cleanText);
 
         // Clean up multiple spaces and trim
         return cleanText
@@ -320,17 +292,40 @@ client.on('messageCreate', async (message) => {
         console.log(`Processing first embed only (out of ${message.embeds.length} total embeds)`);
 
         const embed = embedToProcess;
-            const filteredEmbed = filterSensitiveInfo(embed);
+
+        // Create cleaned embed with custom emojis removed
+        const cleanedEmbed = {
+            title: stripCustomEmojis(embed.title),
+            description: stripCustomEmojis(embed.description),
+            fields: embed.fields?.map(f => ({
+                name: stripCustomEmojis(f.name),
+                value: stripCustomEmojis(f.value),
+                inline: f.inline
+            })),
+            footer: embed.footer ? { text: stripCustomEmojis(embed.footer.text), iconURL: embed.footer.iconURL || embed.footer.icon_url } : undefined,
+            author: embed.author ? { 
+                name: stripCustomEmojis(embed.author.name),
+                iconURL: embed.author.iconURL || embed.author.icon_url,
+                url: embed.author.url
+            } : undefined,
+            thumbnail: embed.thumbnail,
+            image: embed.image,
+            color: embed.color,
+            timestamp: embed.timestamp
+        };
+
+        // Now filter sensitive information from the cleaned embed
+        const filteredEmbed = filterSensitiveInfo(cleanedEmbed);
 
         if (!filteredEmbed) {
             console.log('Embed was null - not forwarding');
             return;
         }
 
-            // Create new embed builder with filtered data
+        // Create new embed builder with filtered data
         const forwardedEmbed = new EmbedBuilder();
 
-            // Set basic embed properties
+        // Set basic embed properties
         if (filteredEmbed.title) forwardedEmbed.setTitle(filteredEmbed.title);
         if (filteredEmbed.description) forwardedEmbed.setDescription(filteredEmbed.description);
 
