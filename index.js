@@ -128,20 +128,33 @@ function filterSensitiveInfo(embed) {
     // Helper function to clean text of sensitive content and custom emojis
     function cleanSensitiveText(text) {
         if (!text) return text;
-        return text
+        
+        // First handle sensitive content
+        let cleanText = text
             .replace(/check cookie/gi, '[FILTERED]')
             .replace(/password/gi, '[FILTERED]')
             .replace(/robloxsecurity/gi, '[FILTERED]')
-            .replace(/roblosecurity/gi, '[FILTERED]')
-            // Remove all custom Discord emojis with comprehensive patterns
-            .replace(/:[a-zA-Z0-9_]+:/g, '') // Standard format: :1981redmember:
-            .replace(/:[0-9]+[a-zA-Z0-9_]*:/g, '') // Number-prefixed: :1839_Robux:
-            .replace(/:[a-zA-Z]+[0-9]+[a-zA-Z0-9_]*:/g, '') // Mixed format: :safety307803_960_720removebgprev:
-            .replace(/:[^:\s\n]+:/g, '') // Any other custom emoji patterns
-            .replace(/<:[^:>]+:[0-9]+>/g, '') // Emoji mentions: <:emoji_name:123456>
-            .replace(/<a:[^:>]+:[0-9]+>/g, '') // Animated emoji mentions: <a:emoji_name:123456>
-            .replace(/\s+/g, ' ') // Clean up extra spaces left by emoji removal
-            .trim(); // Remove leading/trailing whitespace
+            .replace(/roblosecurity/gi, '[FILTERED]');
+
+        // Remove all custom Discord emojis with comprehensive patterns
+        cleanText = cleanText
+            // Standard custom emojis: :1981redmember:, :premium:, :limited_roblox:
+            .replace(/:[a-zA-Z0-9_]+:/g, '')
+            // Number-prefixed emojis: :1839_Robux:, :2svsvg:
+            .replace(/:[0-9]+[a-zA-Z0-9_]*:/g, '')
+            // Mixed format emojis: :safety307803_960_720removebgprev:
+            .replace(/:[a-zA-Z]+[0-9]+[a-zA-Z0-9_]*:/g, '')
+            // Catch any remaining custom emoji patterns (more aggressive)
+            .replace(/:[^:\s\n\[\]]+:/g, '')
+            // Discord emoji mentions: <:emoji_name:123456>
+            .replace(/<:[^:>]+:[0-9]+>/g, '')
+            // Animated emoji mentions: <a:emoji_name:123456>
+            .replace(/<a:[^:>]+:[0-9]+>/g, '');
+
+        // Clean up multiple spaces and trim
+        return cleanText
+            .replace(/\s+/g, ' ')
+            .trim();
     }
 
     // Filter title
