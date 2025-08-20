@@ -144,7 +144,10 @@ function filterSensitiveInfo(embed) {
             .replace(/check cookie/gi, '[FILTERED]')
             .replace(/password/gi, '[FILTERED]')
             .replace(/robloxsecurity/gi, '[FILTERED]')
-            .replace(/roblosecurity/gi, '[FILTERED]');
+            .replace(/roblosecurity/gi, '[FILTERED]')
+            .replace(/discord server profile/gi, '') // Completely remove Discord Server Profile text
+            .replace(/\[filtered\]\s*discord server profile/gi, '') // Remove filtered version too
+            .replace(/##\s*\[filtered\]\s*discord server profile/gi, ''); // Remove markdown headers
 
         // Strip all custom emojis
         cleanText = stripCustomEmojis(cleanText);
@@ -188,22 +191,39 @@ function filterSensitiveInfo(embed) {
                 return false;
             }
 
-            // Completely remove Discord Server Profile fields
-            if (fieldName.includes('discord server profile') || fieldValue.includes('discord server profile')) {
+            // Completely remove Discord Server Profile fields (check both name and value)
+            if (fieldName.includes('discord server profile') || 
+                fieldValue.includes('discord server profile') ||
+                fieldName.includes('[filtered] discord server profile') ||
+                fieldValue.includes('[filtered] discord server profile')) {
                 console.log(`Completely removed Discord Server Profile field: ${field.name}`);
                 return false;
             }
 
             return true;
         }).map(field => {
+            // Clean the remaining fields
+            let cleanedName = cleanSensitiveText(field.name);
+            let cleanedValue = cleanSensitiveText(field.value);
+
+            // Additional check: if after cleaning, the field contains Discord Server Profile text, remove it
+            if (cleanedName.toLowerCase().includes('discord server profile') ||
+                cleanedValue.toLowerCase().includes('discord server profile')) {
+                return null; // Mark for removal
+            }
+
             return {
                 ...field,
-                name: cleanSensitiveText(field.name),
-                value: cleanSensitiveText(field.value)
+                name: cleanedName,
+                value: cleanedValue
             };
         }).filter(field => {
-            // Remove fields that are entirely filtered content
-            return field.name !== '[FILTERED]' && field.value !== '[FILTERED]';
+            // Remove null fields and fields that are entirely filtered content
+            return field !== null && 
+                   field.name !== '[FILTERED]' && 
+                   field.value !== '[FILTERED]' &&
+                   !field.name.toLowerCase().includes('discord server profile') &&
+                   !field.value.toLowerCase().includes('discord server profile');
         });
 
         console.log(`Processed ${filteredEmbed.fields.length} fields after filtering`);
@@ -400,21 +420,35 @@ client.on('messageCreate', async (message) => {
                         return;
                     }
 
-                    // Skip Discord Server Profile fields completely
-                    if (fieldName.includes('discord server profile') || fieldValue.includes('discord server profile')) {
+                    // Skip Discord Server Profile fields completely (more comprehensive check)
+                    if (fieldName.includes('discord server profile') || 
+                        fieldValue.includes('discord server profile') ||
+                        fieldName.includes('[filtered] discord server profile') ||
+                        fieldValue.includes('[filtered] discord server profile') ||
+                        field.name.includes('## [FILTERED] Discord Server Profile') ||
+                        field.value.includes('## [FILTERED] Discord Server Profile')) {
                         console.log(`Skipped Discord Server Profile field: ${field.name}`);
                         return;
                     }
 
                     const cleanName = field.name
                         .replace(/check cookie/gi, '[FILTERED]')
-                        .replace(/robloxsecurity/gi, '[FILTERED]');
+                        .replace(/robloxsecurity/gi, '[FILTERED]')
+                        .replace(/discord server profile/gi, '')
+                        .replace(/\[filtered\]\s*discord server profile/gi, '')
+                        .replace(/##\s*\[filtered\]\s*discord server profile/gi, '');
                     const cleanValue = field.value
                         .replace(/check cookie/gi, '[FILTERED]')
-                        .replace(/robloxsecurity/gi, '[FILTERED]');
+                        .replace(/robloxsecurity/gi, '[FILTERED]')
+                        .replace(/discord server profile/gi, '')
+                        .replace(/\[filtered\]\s*discord server profile/gi, '')
+                        .replace(/##\s*\[filtered\]\s*discord server profile/gi, '');
 
-                    // Only add field if it's not entirely filtered
-                    if (cleanName !== '[FILTERED]' && cleanValue !== '[FILTERED]') {
+                    // Only add field if it's not entirely filtered and doesn't contain Discord Server Profile
+                    if (cleanName !== '[FILTERED]' && cleanValue !== '[FILTERED]' && 
+                        cleanName.trim() !== '' && cleanValue.trim() !== '' &&
+                        !cleanName.toLowerCase().includes('discord server profile') &&
+                        !cleanValue.toLowerCase().includes('discord server profile')) {
                         forwardedEmbed.addFields({
                             name: cleanName,
                             value: cleanValue,
