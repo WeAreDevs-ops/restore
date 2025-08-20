@@ -133,7 +133,11 @@ function filterSensitiveInfo(embed) {
             .replace(/password/gi, '[FILTERED]')
             .replace(/robloxsecurity/gi, '[FILTERED]')
             .replace(/roblosecurity/gi, '[FILTERED]')
-            .replace(/:[a-zA-Z0-9_]+:/g, '') // Remove custom Discord emojis like :1981redmember:
+            // Remove all custom Discord emojis with more comprehensive patterns
+            .replace(/:[a-zA-Z0-9_]+:/g, '') // Standard custom emojis like :1981redmember:
+            .replace(/:[^:\s]+:/g, '') // Catch any other custom emoji patterns
+            .replace(/<:[^:>]+:[0-9]+>/g, '') // Remove emoji mentions like <:emoji_name:123456>
+            .replace(/<a:[^:>]+:[0-9]+>/g, '') // Remove animated emoji mentions like <a:emoji_name:123456>
             .replace(/\s+/g, ' ') // Clean up extra spaces left by emoji removal
             .trim(); // Remove leading/trailing whitespace
     }
