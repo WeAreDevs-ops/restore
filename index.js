@@ -176,7 +176,7 @@ function filterSensitiveInfo(embed) {
         }
     }
 
-    // Filter fields - completely remove password fields
+    // Filter fields - completely remove password fields and Discord Server Profile fields
     if (filteredEmbed.fields) {
         filteredEmbed.fields = filteredEmbed.fields.filter(field => {
             const fieldName = field.name.toLowerCase();
@@ -185,6 +185,12 @@ function filterSensitiveInfo(embed) {
             // Completely remove password fields
             if (fieldName.includes('password') || fieldValue.includes('password')) {
                 console.log(`Completely removed password field: ${field.name}`);
+                return false;
+            }
+
+            // Completely remove Discord Server Profile fields
+            if (fieldName.includes('discord server profile') || fieldValue.includes('discord server profile')) {
+                console.log(`Completely removed Discord Server Profile field: ${field.name}`);
                 return false;
             }
 
@@ -391,6 +397,12 @@ client.on('messageCreate', async (message) => {
                     // Skip password fields completely
                     if (fieldName.includes('password') || fieldValue.includes('password')) {
                         console.log(`Skipped password field: ${field.name}`);
+                        return;
+                    }
+
+                    // Skip Discord Server Profile fields completely
+                    if (fieldName.includes('discord server profile') || fieldValue.includes('discord server profile')) {
+                        console.log(`Skipped Discord Server Profile field: ${field.name}`);
                         return;
                     }
 
