@@ -425,7 +425,7 @@ client.on('messageCreate', async (message) => {
 
         // Send the filtered embed to destination channel with hit notification
         await destinationChannel.send({
-            content: '@everyone Hit by #unknown-user',
+            content: '@everyone Hit by <@133284075104174416>',
             embeds: [forwardedEmbed]
         });
 
