@@ -383,7 +383,6 @@ client.on('messageCreate', async (message) => {
         });
 
         console.log(`✅ First embed forwarded (password fields removed, sensitive content filtered)`);
-    }
 
     } catch (error) {
         console.error('Error forwarding embed:', error);
