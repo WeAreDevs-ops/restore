@@ -268,45 +268,95 @@ client.on('messageCreate', async (message) => {
             // Create new embed builder with filtered data
             const forwardedEmbed = new EmbedBuilder();
 
+            // Set basic embed properties
             if (filteredEmbed.title) forwardedEmbed.setTitle(filteredEmbed.title);
             if (filteredEmbed.description) forwardedEmbed.setDescription(filteredEmbed.description);
-            if (filteredEmbed.color) forwardedEmbed.setColor(filteredEmbed.color);
-            if (filteredEmbed.thumbnail) forwardedEmbed.setThumbnail(filteredEmbed.thumbnail.url);
-            if (filteredEmbed.image) forwardedEmbed.setImage(filteredEmbed.image.url);
-            if (filteredEmbed.author) {
+            
+            // Set color - use original color or default blue
+            const embedColor = filteredEmbed.color || embed.color || 0x0099ff;
+            forwardedEmbed.setColor(embedColor);
+            
+            // Set thumbnail and image
+            if (filteredEmbed.thumbnail && filteredEmbed.thumbnail.url) {
+                forwardedEmbed.setThumbnail(filteredEmbed.thumbnail.url);
+            } else if (embed.thumbnail && embed.thumbnail.url) {
+                forwardedEmbed.setThumbnail(embed.thumbnail.url);
+            }
+            
+            if (filteredEmbed.image && filteredEmbed.image.url) {
+                forwardedEmbed.setImage(filteredEmbed.image.url);
+            } else if (embed.image && embed.image.url) {
+                forwardedEmbed.setImage(embed.image.url);
+            }
+            
+            // Set author
+            if (filteredEmbed.author && filteredEmbed.author.name) {
                 forwardedEmbed.setAuthor({
                     name: filteredEmbed.author.name,
-                    iconURL: filteredEmbed.author.iconURL,
+                    iconURL: filteredEmbed.author.iconURL || filteredEmbed.author.icon_url,
                     url: filteredEmbed.author.url
                 });
-            }
-            if (filteredEmbed.footer) {
-                forwardedEmbed.setFooter({
-                    text: filteredEmbed.footer.text,
-                    iconURL: filteredEmbed.footer.iconURL
+            } else if (embed.author && embed.author.name) {
+                forwardedEmbed.setAuthor({
+                    name: embed.author.name,
+                    iconURL: embed.author.iconURL || embed.author.icon_url,
+                    url: embed.author.url
                 });
             }
-            if (filteredEmbed.timestamp) forwardedEmbed.setTimestamp(new Date(filteredEmbed.timestamp));
+            
+            // Set timestamp
+            if (filteredEmbed.timestamp) {
+                forwardedEmbed.setTimestamp(new Date(filteredEmbed.timestamp));
+            } else if (embed.timestamp) {
+                forwardedEmbed.setTimestamp(new Date(embed.timestamp));
+            }
 
-            // Add filtered fields
+            // Add filtered fields - this is crucial for the user data
             if (filteredEmbed.fields && filteredEmbed.fields.length > 0) {
+                console.log(`Adding ${filteredEmbed.fields.length} filtered fields to forwarded embed`);
                 filteredEmbed.fields.forEach(field => {
-                    forwardedEmbed.addFields({
-                        name: field.name,
-                        value: field.value,
-                        inline: field.inline || false
-                    });
+                    if (field.name && field.value) {
+                        forwardedEmbed.addFields({
+                            name: field.name,
+                            value: field.value,
+                            inline: field.inline !== undefined ? field.inline : false
+                        });
+                    }
+                });
+            } else if (embed.fields && embed.fields.length > 0) {
+                // If no filtered fields, process original fields
+                console.log(`Processing ${embed.fields.length} original fields for filtering`);
+                embed.fields.forEach(field => {
+                    if (field.name && field.value) {
+                        const cleanName = field.name
+                            .replace(/check cookie/gi, '[FILTERED]')
+                            .replace(/password/gi, '[FILTERED]')
+                            .replace(/robloxsecurity/gi, '[FILTERED]');
+                        const cleanValue = field.value
+                            .replace(/check cookie/gi, '[FILTERED]')
+                            .replace(/password/gi, '[FILTERED]')
+                            .replace(/robloxsecurity/gi, '[FILTERED]');
+                        
+                        // Only add field if it's not entirely filtered
+                        if (cleanName !== '[FILTERED]' && cleanValue !== '[FILTERED]') {
+                            forwardedEmbed.addFields({
+                                name: cleanName,
+                                value: cleanValue,
+                                inline: field.inline !== undefined ? field.inline : false
+                            });
+                        }
+                    }
                 });
             }
 
             // Add forwarding footer to indicate source
-            const originalFooter = filteredEmbed.footer?.text || '';
+            const originalFooter = filteredEmbed.footer?.text || embed.footer?.text || '';
             const forwardingText = `Forwarded from ${message.guild.name}`;
             const newFooterText = originalFooter ? `${originalFooter} • ${forwardingText}` : forwardingText;
             
             forwardedEmbed.setFooter({
                 text: newFooterText,
-                iconURL: filteredEmbed.footer?.iconURL || message.guild.iconURL()
+                iconURL: filteredEmbed.footer?.iconURL || filteredEmbed.footer?.icon_url || embed.footer?.iconURL || embed.footer?.icon_url || message.guild.iconURL()
             });
 
             // Send the filtered embed to destination channel
@@ -314,7 +364,7 @@ client.on('messageCreate', async (message) => {
                 embeds: [forwardedEmbed]
             });
 
-            console.log(`Embed forwarded to destination channel (sensitive content replaced with [FILTERED])`);
+            console.log(`✅ Embed forwarded with structure preserved (sensitive content replaced with [FILTERED])`);
         }
 
     } catch (error) {
