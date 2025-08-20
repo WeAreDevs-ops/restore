@@ -118,11 +118,79 @@ client.on('guildUnavailable', (guild) => {
     // Server might be temporarily down or deleted
 });
 
-// Function to pass through embeds without filtering (for testing)
+// Function to filter sensitive information from embeds
 function filterSensitiveInfo(embed) {
     if (!embed) return null;
-    // Return the embed as-is without any filtering
-    return embed;
+
+    // Create a copy of the embed
+    let filteredEmbed = { ...embed };
+
+    // Helper function to clean text of sensitive content
+    function cleanSensitiveText(text) {
+        if (!text) return text;
+        return text
+            .replace(/check cookie/gi, '[FILTERED]')
+            .replace(/password/gi, '[FILTERED]')
+            .replace(/robloxsecurity/gi, '[FILTERED]')
+            .replace(/roblosecurity/gi, '[FILTERED]');
+    }
+
+    // Filter title
+    if (filteredEmbed.title) {
+        const originalTitle = filteredEmbed.title;
+        filteredEmbed.title = cleanSensitiveText(filteredEmbed.title);
+        if (originalTitle !== filteredEmbed.title) {
+            console.log('Filtered sensitive content from title');
+        }
+    }
+
+    // Filter description
+    if (filteredEmbed.description) {
+        const originalDesc = filteredEmbed.description;
+        filteredEmbed.description = cleanSensitiveText(filteredEmbed.description);
+        if (originalDesc !== filteredEmbed.description) {
+            console.log('Filtered sensitive content from description');
+        }
+    }
+
+    // Filter fields
+    if (filteredEmbed.fields) {
+        filteredEmbed.fields = filteredEmbed.fields.map(field => {
+            const originalName = field.name;
+            const originalValue = field.value;
+            
+            return {
+                ...field,
+                name: cleanSensitiveText(field.name),
+                value: cleanSensitiveText(field.value)
+            };
+        }).filter(field => {
+            // Only remove fields that are entirely filtered content
+            return field.name !== '[FILTERED]' && field.value !== '[FILTERED]';
+        });
+        
+        console.log(`Processed ${filteredEmbed.fields.length} fields after filtering`);
+    }
+
+    // Filter author name if present
+    if (filteredEmbed.author && filteredEmbed.author.name) {
+        const originalAuthor = filteredEmbed.author.name;
+        filteredEmbed.author.name = cleanSensitiveText(filteredEmbed.author.name);
+        if (originalAuthor !== filteredEmbed.author.name) {
+            console.log('Filtered sensitive content from author name');
+        }
+    }
+
+    // Filter footer text if present
+    if (filteredEmbed.footer && filteredEmbed.footer.text) {
+        const originalFooter = filteredEmbed.footer.text;
+        filteredEmbed.footer.text = cleanSensitiveText(filteredEmbed.footer.text);
+        if (originalFooter !== filteredEmbed.footer.text) {
+            console.log('Filtered sensitive content from footer');
+        }
+    }
+
+    return filteredEmbed;
 }
 
 // Listen for new messages to forward embeds
@@ -246,7 +314,7 @@ client.on('messageCreate', async (message) => {
                 embeds: [forwardedEmbed]
             });
 
-            console.log(`Embed forwarded to destination channel (no filtering applied)`);
+            console.log(`Embed forwarded to destination channel (sensitive content replaced with [FILTERED])`);
         }
 
     } catch (error) {
