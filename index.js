@@ -125,14 +125,17 @@ function filterSensitiveInfo(embed) {
     // Create a copy of the embed
     let filteredEmbed = { ...embed };
 
-    // Helper function to clean text of sensitive content
+    // Helper function to clean text of sensitive content and custom emojis
     function cleanSensitiveText(text) {
         if (!text) return text;
         return text
             .replace(/check cookie/gi, '[FILTERED]')
             .replace(/password/gi, '[FILTERED]')
             .replace(/robloxsecurity/gi, '[FILTERED]')
-            .replace(/roblosecurity/gi, '[FILTERED]');
+            .replace(/roblosecurity/gi, '[FILTERED]')
+            .replace(/:[a-zA-Z0-9_]+:/g, '') // Remove custom Discord emojis like :1981redmember:
+            .replace(/\s+/g, ' ') // Clean up extra spaces left by emoji removal
+            .trim(); // Remove leading/trailing whitespace
     }
 
     // Filter title
