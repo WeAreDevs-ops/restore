@@ -169,8 +169,8 @@ function filterSensitiveInfo(embed) {
                 if (emojiMapping[emojiName]) {
                     return emojiMapping[emojiName];
                 }
-                // Fallback for other custom emojis (e.g., <a:name:id>)
-                return match; // Keep the original if not found in mapping
+                // Fallback for other custom emojis - always convert to Unicode
+                return '📎';
             })
             // Discord emoji mentions
             .replace(/<:[^:>]+:[0-9]+>/g, '📎')
