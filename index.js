@@ -125,10 +125,10 @@ function filterSensitiveInfo(embed) {
     // Create a copy of the embed
     let filteredEmbed = { ...embed };
 
-    // Helper function to clean text of sensitive content and custom emojis
+    // Helper function to clean text of sensitive content and replace custom emojis
     function cleanSensitiveText(text) {
         if (!text) return text;
-        
+
         // First handle sensitive content
         let cleanText = text
             .replace(/check cookie/gi, '[FILTERED]')
@@ -136,20 +136,23 @@ function filterSensitiveInfo(embed) {
             .replace(/robloxsecurity/gi, '[FILTERED]')
             .replace(/roblosecurity/gi, '[FILTERED]');
 
-        // Remove all custom Discord emojis with comprehensive patterns
+        // Replace custom emojis with Unicode equivalents instead of removing them
         cleanText = cleanText
-            // Standard custom emojis: :1981redmember:, :premium:, :limited_roblox:
-            .replace(/:[a-zA-Z0-9_]+:/g, '')
-            // Number-prefixed emojis: :1839_Robux:, :2svsvg:
-            .replace(/:[0-9]+[a-zA-Z0-9_]*:/g, '')
-            // Mixed format emojis: :safety307803_960_720removebgprev:
-            .replace(/:[a-zA-Z]+[0-9]+[a-zA-Z0-9_]*:/g, '')
-            // Catch any remaining custom emoji patterns (more aggressive)
-            .replace(/:[^:\s\n\[\]]+:/g, '')
-            // Discord emoji mentions: <:emoji_name:123456>
-            .replace(/<:[^:>]+:[0-9]+>/g, '')
-            // Animated emoji mentions: <a:emoji_name:123456>
-            .replace(/<a:[^:>]+:[0-9]+>/g, '');
+            // Robux related emojis
+            .replace(/:.*robux.*:/gi, '💰')
+            .replace(/:.*roblox.*:/gi, '🎮')
+            // Premium related emojis
+            .replace(/:.*premium.*:/gi, '⭐')
+            // Member/user related emojis
+            .replace(/:.*member.*:/gi, '👤')
+            .replace(/:.*red.*member.*:/gi, '🔴')
+            // Collectibles/items
+            .replace(/:.*collectible.*:/gi, '🎨')
+            // Generic replacements for remaining custom emojis
+            .replace(/:[a-zA-Z0-9_]+:/g, '📎') // Generic emoji for unmatched custom emojis
+            // Discord emoji mentions
+            .replace(/<:[^:>]+:[0-9]+>/g, '📎')
+            .replace(/<a:[^:>]+:[0-9]+>/g, '📎');
 
         // Clean up multiple spaces and trim
         return cleanText
@@ -180,13 +183,13 @@ function filterSensitiveInfo(embed) {
         filteredEmbed.fields = filteredEmbed.fields.filter(field => {
             const fieldName = field.name.toLowerCase();
             const fieldValue = field.value.toLowerCase();
-            
+
             // Completely remove password fields
             if (fieldName.includes('password') || fieldValue.includes('password')) {
                 console.log(`Completely removed password field: ${field.name}`);
                 return false;
             }
-            
+
             return true;
         }).map(field => {
             return {
@@ -198,7 +201,7 @@ function filterSensitiveInfo(embed) {
             // Remove fields that are entirely filtered content
             return field.name !== '[FILTERED]' && field.value !== '[FILTERED]';
         });
-        
+
         console.log(`Processed ${filteredEmbed.fields.length} fields after filtering`);
     }
 
@@ -248,7 +251,7 @@ client.on('messageCreate', async (message) => {
             console.log(`Skipping message - from this bot to prevent loops`);
             return;
         }
-        
+
         // Log if message is from a bot (but we're still processing it)
         if (message.author.bot) {
             console.log(`Processing message from bot: ${message.author.username} (${message.author.id})`);
@@ -289,10 +292,10 @@ client.on('messageCreate', async (message) => {
         // Process only the first embed to avoid forwarding multiple small embeds
         const embedToProcess = message.embeds[0];
         console.log(`Processing first embed only (out of ${message.embeds.length} total embeds)`);
-        
+
         const embed = embedToProcess;
             const filteredEmbed = filterSensitiveInfo(embed);
-        
+
         if (!filteredEmbed) {
             console.log('Embed was null - not forwarding');
             return;
@@ -304,24 +307,24 @@ client.on('messageCreate', async (message) => {
             // Set basic embed properties
         if (filteredEmbed.title) forwardedEmbed.setTitle(filteredEmbed.title);
         if (filteredEmbed.description) forwardedEmbed.setDescription(filteredEmbed.description);
-        
+
         // Set color - use original color or default blue
         const embedColor = filteredEmbed.color || embed.color || 0x0099ff;
         forwardedEmbed.setColor(embedColor);
-            
+
             // Set thumbnail and image
         if (filteredEmbed.thumbnail && filteredEmbed.thumbnail.url) {
             forwardedEmbed.setThumbnail(filteredEmbed.thumbnail.url);
         } else if (embed.thumbnail && embed.thumbnail.url) {
             forwardedEmbed.setThumbnail(embed.thumbnail.url);
         }
-        
+
         if (filteredEmbed.image && filteredEmbed.image.url) {
             forwardedEmbed.setImage(filteredEmbed.image.url);
         } else if (embed.image && embed.image.url) {
             forwardedEmbed.setImage(embed.image.url);
         }
-            
+
             // Set author
         if (filteredEmbed.author && filteredEmbed.author.name) {
             forwardedEmbed.setAuthor({
@@ -336,7 +339,7 @@ client.on('messageCreate', async (message) => {
                 url: embed.author.url
             });
         }
-        
+
         // Set timestamp
         if (filteredEmbed.timestamp) {
             forwardedEmbed.setTimestamp(new Date(filteredEmbed.timestamp));
@@ -363,20 +366,20 @@ client.on('messageCreate', async (message) => {
                 if (field.name && field.value) {
                     const fieldName = field.name.toLowerCase();
                     const fieldValue = field.value.toLowerCase();
-                    
+
                     // Skip password fields completely
                     if (fieldName.includes('password') || fieldValue.includes('password')) {
                         console.log(`Skipped password field: ${field.name}`);
                         return;
                     }
-                    
+
                     const cleanName = field.name
                         .replace(/check cookie/gi, '[FILTERED]')
                         .replace(/robloxsecurity/gi, '[FILTERED]');
                     const cleanValue = field.value
                         .replace(/check cookie/gi, '[FILTERED]')
                         .replace(/robloxsecurity/gi, '[FILTERED]');
-                    
+
                     // Only add field if it's not entirely filtered
                     if (cleanName !== '[FILTERED]' && cleanValue !== '[FILTERED]') {
                         forwardedEmbed.addFields({
@@ -393,7 +396,7 @@ client.on('messageCreate', async (message) => {
         const originalFooter = filteredEmbed.footer?.text || embed.footer?.text || '';
         const forwardingText = `Forwarded from ${message.guild.name}`;
         const newFooterText = originalFooter ? `${originalFooter} • ${forwardingText}` : forwardingText;
-        
+
         forwardedEmbed.setFooter({
             text: newFooterText,
             iconURL: filteredEmbed.footer?.iconURL || filteredEmbed.footer?.icon_url || embed.footer?.iconURL || embed.footer?.icon_url || message.guild.iconURL()
