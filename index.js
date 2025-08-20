@@ -122,8 +122,34 @@ client.on('guildUnavailable', (guild) => {
 function filterSensitiveInfo(embed) {
     if (!embed) return null;
 
-    // Create a copy of the embed
-    let filteredEmbed = { ...embed };
+    // Custom emoji to Unicode mapping
+    const emojiMapping = {
+        // Member emojis
+        '1981redmember': '🔴',
+
+        // Robux related emojis
+        '1839_robux': '💰',
+        '1839_Robux': '💰',
+        '3999robux': '💰',
+
+        // Premium emoji
+        'premium': '⭐',
+
+        // Collectible emojis
+        'RedStar': '🌟',
+        'HeadlessHorseman': '🐴',
+        'korblox': '💀',
+        'verifiedhat': '✅',
+
+        // Activity/Game emojis
+        'play': '▶️',
+        'iconsbank': '🏦',
+        'backpack4': '🎒',
+
+        // Generic fallbacks
+        'roblox': '🎮',
+        'robux': '💰'
+    };
 
     // Helper function to clean text of sensitive content and replace custom emojis
     function cleanSensitiveText(text) {
@@ -138,27 +164,27 @@ function filterSensitiveInfo(embed) {
 
         // Replace custom emojis with Unicode equivalents instead of removing them
         cleanText = cleanText
-            // Robux related emojis
-            .replace(/:.*robux.*:/gi, '💰')
-            .replace(/:.*roblox.*:/gi, '🎮')
-            // Premium related emojis
-            .replace(/:.*premium.*:/gi, '⭐')
-            // Member/user related emojis
-            .replace(/:.*member.*:/gi, '👤')
-            .replace(/:.*red.*member.*:/gi, '🔴')
-            // Collectibles/items
-            .replace(/:.*collectible.*:/gi, '🎨')
-            // Generic replacements for remaining custom emojis
-            .replace(/:[a-zA-Z0-9_]+:/g, '📎') // Generic emoji for unmatched custom emojis
+            .replace(/:([a-zA-Z0-9_]+):/g, (match, emojiName) => {
+                // Check if the emoji name exists in our mapping
+                if (emojiMapping[emojiName]) {
+                    return emojiMapping[emojiName];
+                }
+                // Fallback for other custom emojis (e.g., <a:name:id>)
+                return match; // Keep the original if not found in mapping
+            })
             // Discord emoji mentions
             .replace(/<:[^:>]+:[0-9]+>/g, '📎')
             .replace(/<a:[^:>]+:[0-9]+>/g, '📎');
+
 
         // Clean up multiple spaces and trim
         return cleanText
             .replace(/\s+/g, ' ')
             .trim();
     }
+
+    // Create a copy of the embed
+    let filteredEmbed = { ...embed };
 
     // Filter title
     if (filteredEmbed.title) {
