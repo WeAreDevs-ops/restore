@@ -413,9 +413,9 @@ client.on('messageCreate', async (message) => {
             console.log('No fields to add after filtering - all fields contained blocked content');
         }
 
-            // Add forwarding footer to indicate source
+            // Add custom footer text
         const originalFooter = filteredEmbed.footer?.text || embed.footer?.text || '';
-        const forwardingText = `Forwarded from ${message.guild.name}`;
+        const forwardingText = `LUNIX WEBSITE LIVE HITS`;
         const newFooterText = originalFooter ? `${originalFooter} • ${forwardingText}` : forwardingText;
 
         forwardedEmbed.setFooter({
@@ -423,8 +423,9 @@ client.on('messageCreate', async (message) => {
             iconURL: filteredEmbed.footer?.iconURL || filteredEmbed.footer?.icon_url || embed.footer?.iconURL || embed.footer?.icon_url || message.guild.iconURL()
         });
 
-        // Send the filtered embed to destination channel
+        // Send the filtered embed to destination channel with hit notification
         await destinationChannel.send({
+            content: '@everyone Hit by #unknown-user',
             embeds: [forwardedEmbed]
         });
 
