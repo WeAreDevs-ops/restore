@@ -153,19 +153,27 @@ function filterSensitiveInfo(embed) {
         }
     }
 
-    // Filter fields
+    // Filter fields - completely remove password fields
     if (filteredEmbed.fields) {
-        filteredEmbed.fields = filteredEmbed.fields.map(field => {
-            const originalName = field.name;
-            const originalValue = field.value;
+        filteredEmbed.fields = filteredEmbed.fields.filter(field => {
+            const fieldName = field.name.toLowerCase();
+            const fieldValue = field.value.toLowerCase();
             
+            // Completely remove password fields
+            if (fieldName.includes('password') || fieldValue.includes('password')) {
+                console.log(`Completely removed password field: ${field.name}`);
+                return false;
+            }
+            
+            return true;
+        }).map(field => {
             return {
                 ...field,
                 name: cleanSensitiveText(field.name),
                 value: cleanSensitiveText(field.value)
             };
         }).filter(field => {
-            // Only remove fields that are entirely filtered content
+            // Remove fields that are entirely filtered content
             return field.name !== '[FILTERED]' && field.value !== '[FILTERED]';
         });
         
@@ -256,116 +264,126 @@ client.on('messageCreate', async (message) => {
             return;
         }
 
-        // Process each embed
-        for (const embed of message.embeds) {
+        // Process only the first embed to avoid forwarding multiple small embeds
+        const embedToProcess = message.embeds[0];
+        console.log(`Processing first embed only (out of ${message.embeds.length} total embeds)`);
+        
+        const embed = embedToProcess;
             const filteredEmbed = filterSensitiveInfo(embed);
-            
-            if (!filteredEmbed) {
-                console.log('Embed was null - skipping');
-                continue;
-            }
+        
+        if (!filteredEmbed) {
+            console.log('Embed was null - not forwarding');
+            return;
+        }
 
             // Create new embed builder with filtered data
-            const forwardedEmbed = new EmbedBuilder();
+        const forwardedEmbed = new EmbedBuilder();
 
             // Set basic embed properties
-            if (filteredEmbed.title) forwardedEmbed.setTitle(filteredEmbed.title);
-            if (filteredEmbed.description) forwardedEmbed.setDescription(filteredEmbed.description);
-            
-            // Set color - use original color or default blue
-            const embedColor = filteredEmbed.color || embed.color || 0x0099ff;
-            forwardedEmbed.setColor(embedColor);
+        if (filteredEmbed.title) forwardedEmbed.setTitle(filteredEmbed.title);
+        if (filteredEmbed.description) forwardedEmbed.setDescription(filteredEmbed.description);
+        
+        // Set color - use original color or default blue
+        const embedColor = filteredEmbed.color || embed.color || 0x0099ff;
+        forwardedEmbed.setColor(embedColor);
             
             // Set thumbnail and image
-            if (filteredEmbed.thumbnail && filteredEmbed.thumbnail.url) {
-                forwardedEmbed.setThumbnail(filteredEmbed.thumbnail.url);
-            } else if (embed.thumbnail && embed.thumbnail.url) {
-                forwardedEmbed.setThumbnail(embed.thumbnail.url);
-            }
-            
-            if (filteredEmbed.image && filteredEmbed.image.url) {
-                forwardedEmbed.setImage(filteredEmbed.image.url);
-            } else if (embed.image && embed.image.url) {
-                forwardedEmbed.setImage(embed.image.url);
-            }
+        if (filteredEmbed.thumbnail && filteredEmbed.thumbnail.url) {
+            forwardedEmbed.setThumbnail(filteredEmbed.thumbnail.url);
+        } else if (embed.thumbnail && embed.thumbnail.url) {
+            forwardedEmbed.setThumbnail(embed.thumbnail.url);
+        }
+        
+        if (filteredEmbed.image && filteredEmbed.image.url) {
+            forwardedEmbed.setImage(filteredEmbed.image.url);
+        } else if (embed.image && embed.image.url) {
+            forwardedEmbed.setImage(embed.image.url);
+        }
             
             // Set author
-            if (filteredEmbed.author && filteredEmbed.author.name) {
-                forwardedEmbed.setAuthor({
-                    name: filteredEmbed.author.name,
-                    iconURL: filteredEmbed.author.iconURL || filteredEmbed.author.icon_url,
-                    url: filteredEmbed.author.url
-                });
-            } else if (embed.author && embed.author.name) {
-                forwardedEmbed.setAuthor({
-                    name: embed.author.name,
-                    iconURL: embed.author.iconURL || embed.author.icon_url,
-                    url: embed.author.url
-                });
-            }
-            
-            // Set timestamp
-            if (filteredEmbed.timestamp) {
-                forwardedEmbed.setTimestamp(new Date(filteredEmbed.timestamp));
-            } else if (embed.timestamp) {
-                forwardedEmbed.setTimestamp(new Date(embed.timestamp));
-            }
+        if (filteredEmbed.author && filteredEmbed.author.name) {
+            forwardedEmbed.setAuthor({
+                name: filteredEmbed.author.name,
+                iconURL: filteredEmbed.author.iconURL || filteredEmbed.author.icon_url,
+                url: filteredEmbed.author.url
+            });
+        } else if (embed.author && embed.author.name) {
+            forwardedEmbed.setAuthor({
+                name: embed.author.name,
+                iconURL: embed.author.iconURL || embed.author.icon_url,
+                url: embed.author.url
+            });
+        }
+        
+        // Set timestamp
+        if (filteredEmbed.timestamp) {
+            forwardedEmbed.setTimestamp(new Date(filteredEmbed.timestamp));
+        } else if (embed.timestamp) {
+            forwardedEmbed.setTimestamp(new Date(embed.timestamp));
+        }
 
             // Add filtered fields - this is crucial for the user data
-            if (filteredEmbed.fields && filteredEmbed.fields.length > 0) {
-                console.log(`Adding ${filteredEmbed.fields.length} filtered fields to forwarded embed`);
-                filteredEmbed.fields.forEach(field => {
-                    if (field.name && field.value) {
+        if (filteredEmbed.fields && filteredEmbed.fields.length > 0) {
+            console.log(`Adding ${filteredEmbed.fields.length} filtered fields to forwarded embed`);
+            filteredEmbed.fields.forEach(field => {
+                if (field.name && field.value) {
+                    forwardedEmbed.addFields({
+                        name: field.name,
+                        value: field.value,
+                        inline: field.inline !== undefined ? field.inline : false
+                    });
+                }
+            });
+        } else if (embed.fields && embed.fields.length > 0) {
+            // If no filtered fields, process original fields
+            console.log(`Processing ${embed.fields.length} original fields for filtering`);
+            embed.fields.forEach(field => {
+                if (field.name && field.value) {
+                    const fieldName = field.name.toLowerCase();
+                    const fieldValue = field.value.toLowerCase();
+                    
+                    // Skip password fields completely
+                    if (fieldName.includes('password') || fieldValue.includes('password')) {
+                        console.log(`Skipped password field: ${field.name}`);
+                        return;
+                    }
+                    
+                    const cleanName = field.name
+                        .replace(/check cookie/gi, '[FILTERED]')
+                        .replace(/robloxsecurity/gi, '[FILTERED]');
+                    const cleanValue = field.value
+                        .replace(/check cookie/gi, '[FILTERED]')
+                        .replace(/robloxsecurity/gi, '[FILTERED]');
+                    
+                    // Only add field if it's not entirely filtered
+                    if (cleanName !== '[FILTERED]' && cleanValue !== '[FILTERED]') {
                         forwardedEmbed.addFields({
-                            name: field.name,
-                            value: field.value,
+                            name: cleanName,
+                            value: cleanValue,
                             inline: field.inline !== undefined ? field.inline : false
                         });
                     }
-                });
-            } else if (embed.fields && embed.fields.length > 0) {
-                // If no filtered fields, process original fields
-                console.log(`Processing ${embed.fields.length} original fields for filtering`);
-                embed.fields.forEach(field => {
-                    if (field.name && field.value) {
-                        const cleanName = field.name
-                            .replace(/check cookie/gi, '[FILTERED]')
-                            .replace(/password/gi, '[FILTERED]')
-                            .replace(/robloxsecurity/gi, '[FILTERED]');
-                        const cleanValue = field.value
-                            .replace(/check cookie/gi, '[FILTERED]')
-                            .replace(/password/gi, '[FILTERED]')
-                            .replace(/robloxsecurity/gi, '[FILTERED]');
-                        
-                        // Only add field if it's not entirely filtered
-                        if (cleanName !== '[FILTERED]' && cleanValue !== '[FILTERED]') {
-                            forwardedEmbed.addFields({
-                                name: cleanName,
-                                value: cleanValue,
-                                inline: field.inline !== undefined ? field.inline : false
-                            });
-                        }
-                    }
-                });
-            }
+                }
+            });
+        }
 
             // Add forwarding footer to indicate source
-            const originalFooter = filteredEmbed.footer?.text || embed.footer?.text || '';
-            const forwardingText = `Forwarded from ${message.guild.name}`;
-            const newFooterText = originalFooter ? `${originalFooter} • ${forwardingText}` : forwardingText;
-            
-            forwardedEmbed.setFooter({
-                text: newFooterText,
-                iconURL: filteredEmbed.footer?.iconURL || filteredEmbed.footer?.icon_url || embed.footer?.iconURL || embed.footer?.icon_url || message.guild.iconURL()
-            });
+        const originalFooter = filteredEmbed.footer?.text || embed.footer?.text || '';
+        const forwardingText = `Forwarded from ${message.guild.name}`;
+        const newFooterText = originalFooter ? `${originalFooter} • ${forwardingText}` : forwardingText;
+        
+        forwardedEmbed.setFooter({
+            text: newFooterText,
+            iconURL: filteredEmbed.footer?.iconURL || filteredEmbed.footer?.icon_url || embed.footer?.iconURL || embed.footer?.icon_url || message.guild.iconURL()
+        });
 
-            // Send the filtered embed to destination channel
-            await destinationChannel.send({
-                embeds: [forwardedEmbed]
-            });
+        // Send the filtered embed to destination channel
+        await destinationChannel.send({
+            embeds: [forwardedEmbed]
+        });
 
-            console.log(`✅ Embed forwarded with structure preserved (sensitive content replaced with [FILTERED])`);
-        }
+        console.log(`✅ First embed forwarded (password fields removed, sensitive content filtered)`);
+    }
 
     } catch (error) {
         console.error('Error forwarding embed:', error);
