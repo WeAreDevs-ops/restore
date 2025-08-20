@@ -133,11 +133,13 @@ function filterSensitiveInfo(embed) {
             .replace(/password/gi, '[FILTERED]')
             .replace(/robloxsecurity/gi, '[FILTERED]')
             .replace(/roblosecurity/gi, '[FILTERED]')
-            // Remove all custom Discord emojis with more comprehensive patterns
-            .replace(/:[a-zA-Z0-9_]+:/g, '') // Standard custom emojis like :1981redmember:
-            .replace(/:[^:\s]+:/g, '') // Catch any other custom emoji patterns
-            .replace(/<:[^:>]+:[0-9]+>/g, '') // Remove emoji mentions like <:emoji_name:123456>
-            .replace(/<a:[^:>]+:[0-9]+>/g, '') // Remove animated emoji mentions like <a:emoji_name:123456>
+            // Remove all custom Discord emojis with comprehensive patterns
+            .replace(/:[a-zA-Z0-9_]+:/g, '') // Standard format: :1981redmember:
+            .replace(/:[0-9]+[a-zA-Z0-9_]*:/g, '') // Number-prefixed: :1839_Robux:
+            .replace(/:[a-zA-Z]+[0-9]+[a-zA-Z0-9_]*:/g, '') // Mixed format: :safety307803_960_720removebgprev:
+            .replace(/:[^:\s\n]+:/g, '') // Any other custom emoji patterns
+            .replace(/<:[^:>]+:[0-9]+>/g, '') // Emoji mentions: <:emoji_name:123456>
+            .replace(/<a:[^:>]+:[0-9]+>/g, '') // Animated emoji mentions: <a:emoji_name:123456>
             .replace(/\s+/g, ' ') // Clean up extra spaces left by emoji removal
             .trim(); // Remove leading/trailing whitespace
     }
