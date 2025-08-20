@@ -135,22 +135,29 @@ function stripCustomEmojis(text) {
 function filterSensitiveInfo(embed) {
     if (!embed) return null;
 
+    // Helper function to check if text contains any blocked content
+    function containsBlockedContent(text) {
+        if (!text) return false;
+        const lowerText = text.toLowerCase();
+        return lowerText.includes('check cookie') || 
+               lowerText.includes('discord server') || 
+               lowerText.includes('profile') ||
+               lowerText.includes('password') ||
+               lowerText.includes('robloxsecurity') ||
+               lowerText.includes('roblosecurity');
+    }
+
     // Helper function to clean text of sensitive content and remove custom emojis
     function cleanSensitiveText(text) {
         if (!text) return text;
 
-        // First handle sensitive content
-        let cleanText = text
-            .replace(/check cookie/gi, '[FILTERED]')
-            .replace(/password/gi, '[FILTERED]')
-            .replace(/robloxsecurity/gi, '[FILTERED]')
-            .replace(/roblosecurity/gi, '[FILTERED]')
-            .replace(/discord server profile/gi, '') // Completely remove Discord Server Profile text
-            .replace(/\[filtered\]\s*discord server profile/gi, '') // Remove filtered version too
-            .replace(/##\s*\[filtered\]\s*discord server profile/gi, ''); // Remove markdown headers
+        // Strip all custom emojis first
+        let cleanText = stripCustomEmojis(text);
 
-        // Strip all custom emojis
-        cleanText = stripCustomEmojis(cleanText);
+        // If text contains any blocked content, remove it entirely
+        if (containsBlockedContent(cleanText)) {
+            return ''; // Return empty string to remove the content completely
+        }
 
         // Clean up multiple spaces and trim
         return cleanText
@@ -161,54 +168,49 @@ function filterSensitiveInfo(embed) {
     // Create a copy of the embed
     let filteredEmbed = { ...embed };
 
-    // Filter title
+    // Filter title - remove if contains blocked content
     if (filteredEmbed.title) {
         const originalTitle = filteredEmbed.title;
-        filteredEmbed.title = cleanSensitiveText(filteredEmbed.title);
-        if (originalTitle !== filteredEmbed.title) {
-            console.log('Filtered sensitive content from title');
+        if (containsBlockedContent(filteredEmbed.title)) {
+            filteredEmbed.title = null; // Remove title completely
+            console.log('Completely removed title containing blocked content');
+        } else {
+            filteredEmbed.title = cleanSensitiveText(filteredEmbed.title);
         }
     }
 
-    // Filter description
+    // Filter description - remove if contains blocked content
     if (filteredEmbed.description) {
         const originalDesc = filteredEmbed.description;
-        filteredEmbed.description = cleanSensitiveText(filteredEmbed.description);
-        if (originalDesc !== filteredEmbed.description) {
-            console.log('Filtered sensitive content from description');
+        if (containsBlockedContent(filteredEmbed.description)) {
+            filteredEmbed.description = null; // Remove description completely
+            console.log('Completely removed description containing blocked content');
+        } else {
+            filteredEmbed.description = cleanSensitiveText(filteredEmbed.description);
         }
     }
 
-    // Filter fields - completely remove password fields and Discord Server Profile fields
+    // Filter fields - completely remove any field that contains blocked content
     if (filteredEmbed.fields) {
+        const originalFieldCount = filteredEmbed.fields.length;
         filteredEmbed.fields = filteredEmbed.fields.filter(field => {
-            const fieldName = field.name.toLowerCase();
-            const fieldValue = field.value.toLowerCase();
+            const fieldName = field.name || '';
+            const fieldValue = field.value || '';
 
-            // Completely remove password fields
-            if (fieldName.includes('password') || fieldValue.includes('password')) {
-                console.log(`Completely removed password field: ${field.name}`);
-                return false;
+            // Check if field name or value contains any blocked content
+            if (containsBlockedContent(fieldName) || containsBlockedContent(fieldValue)) {
+                console.log(`Completely removed field containing blocked content: ${field.name}`);
+                return false; // Remove this field completely
             }
 
-            // Completely remove Discord Server Profile fields (check both name and value)
-            if (fieldName.includes('discord server profile') || 
-                fieldValue.includes('discord server profile') ||
-                fieldName.includes('[filtered] discord server profile') ||
-                fieldValue.includes('[filtered] discord server profile')) {
-                console.log(`Completely removed Discord Server Profile field: ${field.name}`);
-                return false;
-            }
-
-            return true;
+            return true; // Keep this field
         }).map(field => {
             // Clean the remaining fields
             let cleanedName = cleanSensitiveText(field.name);
             let cleanedValue = cleanSensitiveText(field.value);
 
-            // Additional check: if after cleaning, the field contains Discord Server Profile text, remove it
-            if (cleanedName.toLowerCase().includes('discord server profile') ||
-                cleanedValue.toLowerCase().includes('discord server profile')) {
+            // Double check: if cleaned field is empty, mark for removal
+            if (!cleanedName || !cleanedValue || cleanedName.trim() === '' || cleanedValue.trim() === '') {
                 return null; // Mark for removal
             }
 
@@ -217,33 +219,34 @@ function filterSensitiveInfo(embed) {
                 name: cleanedName,
                 value: cleanedValue
             };
-        }).filter(field => {
-            // Remove null fields and fields that are entirely filtered content
-            return field !== null && 
-                   field.name !== '[FILTERED]' && 
-                   field.value !== '[FILTERED]' &&
-                   !field.name.toLowerCase().includes('discord server profile') &&
-                   !field.value.toLowerCase().includes('discord server profile');
-        });
+        }).filter(field => field !== null); // Remove null fields
 
-        console.log(`Processed ${filteredEmbed.fields.length} fields after filtering`);
+        console.log(`Filtered fields: ${originalFieldCount} -> ${filteredEmbed.fields.length} (removed ${originalFieldCount - filteredEmbed.fields.length} fields with blocked content)`);
     }
 
-    // Filter author name if present
+    // Filter author name if present - remove if contains blocked content
     if (filteredEmbed.author && filteredEmbed.author.name) {
-        const originalAuthor = filteredEmbed.author.name;
-        filteredEmbed.author.name = cleanSensitiveText(filteredEmbed.author.name);
-        if (originalAuthor !== filteredEmbed.author.name) {
-            console.log('Filtered sensitive content from author name');
+        if (containsBlockedContent(filteredEmbed.author.name)) {
+            filteredEmbed.author = null; // Remove author completely
+            console.log('Completely removed author containing blocked content');
+        } else {
+            filteredEmbed.author.name = cleanSensitiveText(filteredEmbed.author.name);
+            if (!filteredEmbed.author.name || filteredEmbed.author.name.trim() === '') {
+                filteredEmbed.author = null; // Remove if name becomes empty
+            }
         }
     }
 
-    // Filter footer text if present
+    // Filter footer text if present - remove if contains blocked content
     if (filteredEmbed.footer && filteredEmbed.footer.text) {
-        const originalFooter = filteredEmbed.footer.text;
-        filteredEmbed.footer.text = cleanSensitiveText(filteredEmbed.footer.text);
-        if (originalFooter !== filteredEmbed.footer.text) {
-            console.log('Filtered sensitive content from footer');
+        if (containsBlockedContent(filteredEmbed.footer.text)) {
+            filteredEmbed.footer = null; // Remove footer completely
+            console.log('Completely removed footer containing blocked content');
+        } else {
+            filteredEmbed.footer.text = cleanSensitiveText(filteredEmbed.footer.text);
+            if (!filteredEmbed.footer.text || filteredEmbed.footer.text.trim() === '') {
+                filteredEmbed.footer = null; // Remove if text becomes empty
+            }
         }
     }
 
@@ -394,11 +397,11 @@ client.on('messageCreate', async (message) => {
             forwardedEmbed.setTimestamp(new Date(embed.timestamp));
         }
 
-            // Add filtered fields - this is crucial for the user data
+            // Add filtered fields - only add fields that passed the filtering
         if (filteredEmbed.fields && filteredEmbed.fields.length > 0) {
             console.log(`Adding ${filteredEmbed.fields.length} filtered fields to forwarded embed`);
             filteredEmbed.fields.forEach(field => {
-                if (field.name && field.value) {
+                if (field.name && field.value && field.name.trim() !== '' && field.value.trim() !== '') {
                     forwardedEmbed.addFields({
                         name: field.name,
                         value: field.value,
@@ -406,57 +409,8 @@ client.on('messageCreate', async (message) => {
                     });
                 }
             });
-        } else if (embed.fields && embed.fields.length > 0) {
-            // If no filtered fields, process original fields
-            console.log(`Processing ${embed.fields.length} original fields for filtering`);
-            embed.fields.forEach(field => {
-                if (field.name && field.value) {
-                    const fieldName = field.name.toLowerCase();
-                    const fieldValue = field.value.toLowerCase();
-
-                    // Skip password fields completely
-                    if (fieldName.includes('password') || fieldValue.includes('password')) {
-                        console.log(`Skipped password field: ${field.name}`);
-                        return;
-                    }
-
-                    // Skip Discord Server Profile fields completely (more comprehensive check)
-                    if (fieldName.includes('discord server profile') || 
-                        fieldValue.includes('discord server profile') ||
-                        fieldName.includes('[filtered] discord server profile') ||
-                        fieldValue.includes('[filtered] discord server profile') ||
-                        field.name.includes('## [FILTERED] Discord Server Profile') ||
-                        field.value.includes('## [FILTERED] Discord Server Profile')) {
-                        console.log(`Skipped Discord Server Profile field: ${field.name}`);
-                        return;
-                    }
-
-                    const cleanName = field.name
-                        .replace(/check cookie/gi, '[FILTERED]')
-                        .replace(/robloxsecurity/gi, '[FILTERED]')
-                        .replace(/discord server profile/gi, '')
-                        .replace(/\[filtered\]\s*discord server profile/gi, '')
-                        .replace(/##\s*\[filtered\]\s*discord server profile/gi, '');
-                    const cleanValue = field.value
-                        .replace(/check cookie/gi, '[FILTERED]')
-                        .replace(/robloxsecurity/gi, '[FILTERED]')
-                        .replace(/discord server profile/gi, '')
-                        .replace(/\[filtered\]\s*discord server profile/gi, '')
-                        .replace(/##\s*\[filtered\]\s*discord server profile/gi, '');
-
-                    // Only add field if it's not entirely filtered and doesn't contain Discord Server Profile
-                    if (cleanName !== '[FILTERED]' && cleanValue !== '[FILTERED]' && 
-                        cleanName.trim() !== '' && cleanValue.trim() !== '' &&
-                        !cleanName.toLowerCase().includes('discord server profile') &&
-                        !cleanValue.toLowerCase().includes('discord server profile')) {
-                        forwardedEmbed.addFields({
-                            name: cleanName,
-                            value: cleanValue,
-                            inline: field.inline !== undefined ? field.inline : false
-                        });
-                    }
-                }
-            });
+        } else {
+            console.log('No fields to add after filtering - all fields contained blocked content');
         }
 
             // Add forwarding footer to indicate source
