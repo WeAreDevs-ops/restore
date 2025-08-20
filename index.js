@@ -128,35 +128,47 @@ function filterSensitiveInfo(embed) {
 // Listen for new messages to forward embeds
 client.on('messageCreate', async (message) => {
     try {
+        console.log(`Message received: Channel ID: ${message.channel.id}, Has embeds: ${message.embeds?.length || 0}, Author bot: ${message.author.bot}`);
+        console.log(`Source channel configured: ${SOURCE_CHANNEL_ID}`);
+        console.log(`Destination channel configured: ${DESTINATION_CHANNEL_ID}`);
+        console.log(`Destination guild configured: ${DESTINATION_GUILD_ID}`);
+
         // Only process messages from the source channel
         if (!SOURCE_CHANNEL_ID || message.channel.id !== SOURCE_CHANNEL_ID) {
+            console.log(`Skipping message - not from source channel or no source channel configured`);
             return;
         }
 
         // Only process messages with embeds
         if (!message.embeds || message.embeds.length === 0) {
+            console.log(`Skipping message - no embeds found`);
             return;
         }
 
         // Don't forward bot messages to prevent loops
         if (message.author.bot) {
+            console.log(`Skipping message - from bot user`);
             return;
         }
 
-        console.log(`New embed message detected in source channel`);
+        console.log(`✅ New embed message detected in source channel - processing ${message.embeds.length} embeds`);
 
         // Get destination channel
+        console.log(`Looking for destination guild: ${DESTINATION_GUILD_ID}`);
         const destinationGuild = client.guilds.cache.get(DESTINATION_GUILD_ID);
         if (!destinationGuild) {
-            console.error('Destination guild not found');
+            console.error(`❌ Destination guild not found. Available guilds: ${client.guilds.cache.map(g => `${g.name} (${g.id})`).join(', ')}`);
             return;
         }
+        console.log(`✅ Found destination guild: ${destinationGuild.name}`);
 
+        console.log(`Looking for destination channel: ${DESTINATION_CHANNEL_ID}`);
         const destinationChannel = destinationGuild.channels.cache.get(DESTINATION_CHANNEL_ID);
         if (!destinationChannel) {
-            console.error('Destination channel not found');
+            console.error(`❌ Destination channel not found. Available channels: ${destinationGuild.channels.cache.map(c => `${c.name} (${c.id})`).join(', ')}`);
             return;
         }
+        console.log(`✅ Found destination channel: ${destinationChannel.name}`);
 
         // Check bot permissions in destination channel
         const botMember = destinationGuild.members.cache.get(client.user.id);
