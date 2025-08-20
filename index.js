@@ -145,10 +145,15 @@ client.on('messageCreate', async (message) => {
             return;
         }
 
-        // Don't forward bot messages to prevent loops
-        if (message.author.bot) {
-            console.log(`Skipping message - from bot user`);
+        // Don't forward messages from this bot to prevent loops, but allow other bots
+        if (message.author.bot && message.author.id === client.user.id) {
+            console.log(`Skipping message - from this bot to prevent loops`);
             return;
+        }
+        
+        // Log if message is from a bot (but we're still processing it)
+        if (message.author.bot) {
+            console.log(`Processing message from bot: ${message.author.username} (${message.author.id})`);
         }
 
         console.log(`✅ New embed message detected in source channel - processing ${message.embeds.length} embeds`);
