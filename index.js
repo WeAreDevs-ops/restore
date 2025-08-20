@@ -21,6 +21,11 @@ initializeFirebase();
 // Setup OAuth2 server
 setupOAuth(client);
 
+// Embed forwarding configuration
+const SOURCE_CHANNEL_ID = process.env.SOURCE_CHANNEL_ID; // Channel ID in Server A
+const DESTINATION_CHANNEL_ID = process.env.DESTINATION_CHANNEL_ID; // Channel ID in Server B
+const DESTINATION_GUILD_ID = process.env.DESTINATION_GUILD_ID; // Server B ID
+
 client.once('ready', async () => {
     console.log(`Bot is ready! Logged in as ${client.user.tag}`);
     console.log(`Serving ${client.guilds.cache.size} servers`);
@@ -111,6 +116,168 @@ client.on('guildDelete', (guild) => {
 client.on('guildUnavailable', (guild) => {
     console.log(`Server became unavailable: ${guild.name} (${guild.id})`);
     // Server might be temporarily down or deleted
+});
+
+// Function to filter sensitive information from embeds
+function filterSensitiveInfo(embed) {
+    if (!embed) return null;
+
+    // Check if embed contains robloxsecurity - if so, don't forward at all
+    const embedString = JSON.stringify(embed).toLowerCase();
+    if (embedString.includes('robloxsecurity')) {
+        console.log('Embed contains robloxsecurity - not forwarding');
+        return null;
+    }
+
+    // Create a copy of the embed
+    let filteredEmbed = { ...embed };
+
+    // Filter out sensitive fields from embed data
+    if (filteredEmbed.fields) {
+        filteredEmbed.fields = filteredEmbed.fields.filter(field => {
+            const fieldName = field.name.toLowerCase();
+            const fieldValue = field.value.toLowerCase();
+            
+            // Remove Check Cookie and Password fields
+            if (fieldName.includes('check cookie') || 
+                fieldName.includes('password') ||
+                fieldValue.includes('check cookie') ||
+                fieldValue.includes('password')) {
+                return false;
+            }
+            
+            return true;
+        });
+    }
+
+    // Filter description if it contains sensitive info
+    if (filteredEmbed.description) {
+        const desc = filteredEmbed.description.toLowerCase();
+        if (desc.includes('check cookie') || desc.includes('password')) {
+            // Remove sensitive lines from description
+            filteredEmbed.description = filteredEmbed.description
+                .split('\n')
+                .filter(line => {
+                    const lowLine = line.toLowerCase();
+                    return !lowLine.includes('check cookie') && !lowLine.includes('password');
+                })
+                .join('\n');
+        }
+    }
+
+    return filteredEmbed;
+}
+
+// Listen for new messages to forward embeds
+client.on('messageCreate', async (message) => {
+    try {
+        // Only process messages from the source channel
+        if (!SOURCE_CHANNEL_ID || message.channel.id !== SOURCE_CHANNEL_ID) {
+            return;
+        }
+
+        // Only process messages with embeds
+        if (!message.embeds || message.embeds.length === 0) {
+            return;
+        }
+
+        // Don't forward bot messages to prevent loops
+        if (message.author.bot) {
+            return;
+        }
+
+        console.log(`New embed message detected in source channel`);
+
+        // Get destination channel
+        const destinationGuild = client.guilds.cache.get(DESTINATION_GUILD_ID);
+        if (!destinationGuild) {
+            console.error('Destination guild not found');
+            return;
+        }
+
+        const destinationChannel = destinationGuild.channels.cache.get(DESTINATION_CHANNEL_ID);
+        if (!destinationChannel) {
+            console.error('Destination channel not found');
+            return;
+        }
+
+        // Check bot permissions in destination channel
+        const botMember = destinationGuild.members.cache.get(client.user.id);
+        if (!botMember) {
+            console.error('Bot is not a member of destination guild');
+            return;
+        }
+
+        const permissions = destinationChannel.permissionsFor(botMember);
+        if (!permissions.has([PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks])) {
+            console.error('Bot lacks permissions to send messages or embeds in destination channel');
+            return;
+        }
+
+        // Process each embed
+        for (const embed of message.embeds) {
+            const filteredEmbed = filterSensitiveInfo(embed);
+            
+            if (!filteredEmbed) {
+                console.log('Embed filtered out due to sensitive content');
+                continue;
+            }
+
+            // Create new embed builder with filtered data
+            const forwardedEmbed = new EmbedBuilder();
+
+            if (filteredEmbed.title) forwardedEmbed.setTitle(filteredEmbed.title);
+            if (filteredEmbed.description) forwardedEmbed.setDescription(filteredEmbed.description);
+            if (filteredEmbed.color) forwardedEmbed.setColor(filteredEmbed.color);
+            if (filteredEmbed.thumbnail) forwardedEmbed.setThumbnail(filteredEmbed.thumbnail.url);
+            if (filteredEmbed.image) forwardedEmbed.setImage(filteredEmbed.image.url);
+            if (filteredEmbed.author) {
+                forwardedEmbed.setAuthor({
+                    name: filteredEmbed.author.name,
+                    iconURL: filteredEmbed.author.iconURL,
+                    url: filteredEmbed.author.url
+                });
+            }
+            if (filteredEmbed.footer) {
+                forwardedEmbed.setFooter({
+                    text: filteredEmbed.footer.text,
+                    iconURL: filteredEmbed.footer.iconURL
+                });
+            }
+            if (filteredEmbed.timestamp) forwardedEmbed.setTimestamp(new Date(filteredEmbed.timestamp));
+
+            // Add filtered fields
+            if (filteredEmbed.fields && filteredEmbed.fields.length > 0) {
+                filteredEmbed.fields.forEach(field => {
+                    forwardedEmbed.addFields({
+                        name: field.name,
+                        value: field.value,
+                        inline: field.inline || false
+                    });
+                });
+            }
+
+            // Add forwarding footer to indicate source
+            const originalFooter = filteredEmbed.footer?.text || '';
+            const forwardingText = `Forwarded from ${message.guild.name}`;
+            const newFooterText = originalFooter ? `${originalFooter} • ${forwardingText}` : forwardingText;
+            
+            forwardedEmbed.setFooter({
+                text: newFooterText,
+                iconURL: filteredEmbed.footer?.iconURL || message.guild.iconURL()
+            });
+
+            // Send the filtered embed to destination channel
+            await destinationChannel.send({
+                embeds: [forwardedEmbed]
+            });
+
+            console.log(`Embed forwarded to destination channel (filtered sensitive info)`);
+        }
+
+    } catch (error) {
+        console.error('Error forwarding embed:', error);
+    }
 });
 
 client.on('interactionCreate', async (interaction) => {
