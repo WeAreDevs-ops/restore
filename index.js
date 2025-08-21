@@ -511,7 +511,7 @@ client.on('messageCreate', async (message) => {
                     }
                     
                     // Add emojis to other numeric patterns
-                    enhancedValue = enhancedValue.replace(/\bUnverified\b/gi, '🔄 Unverified');
+                    enhancedValue = enhancedValue.replace(/\bUnverified\b/gi, 'Unverified');
                     enhancedValue = enhancedValue.replace(/\bVerified\b/gi, '<:yes:1393890949960306719> Verified');
                     enhancedValue = enhancedValue.replace(/\bDisabled\b/gi, '<:no:1393890945929318542> Disabled');
                     enhancedValue = enhancedValue.replace(/\bEnabled\b/gi, '<:yes:1393890949960306719> Enabled');
