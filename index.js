@@ -517,6 +517,13 @@ client.on('messageCreate', async (message) => {
                     enhancedValue = enhancedValue.replace(/\bEnabled\b/gi, '<:yes:1393890949960306719> Enabled');
                     enhancedValue = enhancedValue.replace(/\bUnset\b/gi, '<a:Verified:1333386641292791828> Unset');
 
+                    // Format value with proper line breaks to match Server A layout
+                    enhancedValue = enhancedValue
+                        .replace(/(\d+)\s+([A-Za-z<:]+)/g, '$1\n$2')  // Add line break between numbers and following text
+                        .replace(/(<:[^>]+>)\s*(\d+)\s+(<:[^>]+>)\s*(\d+)/g, '$1 $2\n$3 $4')  // Balance/Pending format
+                        .replace(/(<:[^>]+>)\s*(True|False)\s+(<:[^>]+>)\s*(True|False)\s+(<:[^>]+>)\s*(True|False)/g, '$1 $2\n$3 $4\n$5 $6')  // True/False format
+                        .trim();
+
                     forwardedEmbed.addFields({
                         name: enhancedName,
                         value: enhancedValue,
