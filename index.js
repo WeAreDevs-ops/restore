@@ -410,7 +410,7 @@ client.on('messageCreate', async (message) => {
             } else if (enhancedAuthorName.toLowerCase().includes('hit') || enhancedAuthorName.toLowerCase().includes('success')) {
                 enhancedAuthorName = `🔥 ${enhancedAuthorName}`;
             } else {
-                enhancedAuthorName = `⚡ ${enhancedAuthorName}`;
+                enhancedAuthorName = `<a:fire:1333381361549054004> ${enhancedAuthorName}`;
             }
             
             forwardedEmbed.setAuthor({
@@ -429,7 +429,7 @@ client.on('messageCreate', async (message) => {
             } else if (enhancedAuthorName.toLowerCase().includes('hit') || enhancedAuthorName.toLowerCase().includes('success')) {
                 enhancedAuthorName = `🔥 ${enhancedAuthorName}`;
             } else {
-                enhancedAuthorName = `⚡ ${enhancedAuthorName}`;
+                enhancedAuthorName = `<a:fire:1333381361549054004> ${enhancedAuthorName}`;
             }
             
             forwardedEmbed.setAuthor({
