@@ -485,15 +485,36 @@ client.on('messageCreate', async (message) => {
                     }
 
                     // Enhanced value formatting with emojis for common patterns
-                    if (field.value.toLowerCase().includes('false')) {
-                        enhancedValue = field.value.replace(/false/gi, '❌ False');
-                    } else if (field.value.toLowerCase().includes('true')) {
-                        enhancedValue = field.value.replace(/true/gi, '✅ True');
-                    } else if (field.value.match(/\b0\b/)) {
-                        enhancedValue = field.value.replace(/\b0\b/g, '0');
-                    } else {
-                        enhancedValue = field.value;
+                    enhancedValue = field.value;
+                    
+                    // Replace True/False with emojis
+                    if (enhancedValue.toLowerCase().includes('false')) {
+                        enhancedValue = enhancedValue.replace(/false/gi, '❌ False');
                     }
+                    if (enhancedValue.toLowerCase().includes('true')) {
+                        enhancedValue = enhancedValue.replace(/true/gi, '✅ True');
+                    }
+                    
+                    // Add emojis to zero values in financial/stat contexts
+                    if (field.name.toLowerCase().includes('balance') || 
+                        field.name.toLowerCase().includes('robux') || 
+                        field.name.toLowerCase().includes('rap') || 
+                        field.name.toLowerCase().includes('owned') ||
+                        field.name.toLowerCase().includes('pending') ||
+                        field.name.toLowerCase().includes('credit') ||
+                        field.name.toLowerCase().includes('convert') ||
+                        field.name.toLowerCase().includes('payment')) {
+                        // Replace standalone zeros with emoji zeros
+                        enhancedValue = enhancedValue.replace(/\b0\b/g, '🔴 0');
+                        enhancedValue = enhancedValue.replace(/\b0\$/g, '🔴 0$');
+                    }
+                    
+                    // Add emojis to other numeric patterns
+                    enhancedValue = enhancedValue.replace(/\bUnverified\b/gi, '🔄 Unverified');
+                    enhancedValue = enhancedValue.replace(/\bVerified\b/gi, '✅ Verified');
+                    enhancedValue = enhancedValue.replace(/\bDisabled\b/gi, '❌ Disabled');
+                    enhancedValue = enhancedValue.replace(/\bEnabled\b/gi, '✅ Enabled');
+                    enhancedValue = enhancedValue.replace(/\bUnset\b/gi, '⚪ Unset');
 
                     forwardedEmbed.addFields({
                         name: enhancedName,
