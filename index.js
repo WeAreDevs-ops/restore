@@ -487,12 +487,12 @@ client.on('messageCreate', async (message) => {
                     // Enhanced value formatting with emojis for common patterns
                     enhancedValue = field.value;
                     
-                    // Replace True/False with emojis
-                    if (enhancedValue.toLowerCase().includes('false')) {
-                        enhancedValue = enhancedValue.replace(/false/gi, '❌ False');
-                    }
+                    // Replace True/False with emojis - order matters, do True first
                     if (enhancedValue.toLowerCase().includes('true')) {
                         enhancedValue = enhancedValue.replace(/true/gi, '✅ True');
+                    }
+                    if (enhancedValue.toLowerCase().includes('false')) {
+                        enhancedValue = enhancedValue.replace(/false/gi, '❌ False');
                     }
                     
                     // Add emojis to zero values in financial/stat contexts
@@ -503,7 +503,8 @@ client.on('messageCreate', async (message) => {
                         field.name.toLowerCase().includes('pending') ||
                         field.name.toLowerCase().includes('credit') ||
                         field.name.toLowerCase().includes('convert') ||
-                        field.name.toLowerCase().includes('payment')) {
+                        field.name.toLowerCase().includes('payment') ||
+                        field.name.toLowerCase().includes('group')) {
                         // Replace standalone zeros with emoji zeros
                         enhancedValue = enhancedValue.replace(/\b0\b/g, '🔴 0');
                         enhancedValue = enhancedValue.replace(/\b0\$/g, '🔴 0$');
