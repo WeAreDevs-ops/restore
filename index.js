@@ -410,7 +410,7 @@ client.on('messageCreate', async (message) => {
             } else if (enhancedAuthorName.toLowerCase().includes('hit') || enhancedAuthorName.toLowerCase().includes('success')) {
                 enhancedAuthorName = `🔥 ${enhancedAuthorName}`;
             } else {
-                enhancedAuthorName = `<a:fire:1333381361549054004> ${enhancedAuthorName}`;
+                enhancedAuthorName = `🏆 ${enhancedAuthorName}`;
             }
             
             forwardedEmbed.setAuthor({
@@ -429,7 +429,7 @@ client.on('messageCreate', async (message) => {
             } else if (enhancedAuthorName.toLowerCase().includes('hit') || enhancedAuthorName.toLowerCase().includes('success')) {
                 enhancedAuthorName = `🔥 ${enhancedAuthorName}`;
             } else {
-                enhancedAuthorName = `<a:fire:1333381361549054004> ${enhancedAuthorName}`;
+                enhancedAuthorName = `🏆 ${enhancedAuthorName}`;
             }
             
             forwardedEmbed.setAuthor({
@@ -553,7 +553,7 @@ client.on('messageCreate', async (message) => {
             }
         }
         
-        const forwardingText = `<:hacker:1404745235711655987> LUNIX WEBSITE LIVE HITS <:hacker:1404745235711655987>`;
+        const forwardingText = `LUNIX WEBSITE LIVE HITS 🔥`;
         const newFooterText = originalFooter ? `${originalFooter} • ${forwardingText}` : forwardingText;
 
         forwardedEmbed.setFooter({
