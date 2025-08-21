@@ -429,15 +429,23 @@ client.on('messageCreate', async (message) => {
                     let enhancedName = field.name;
                     let enhancedValue = field.value;
                     
-                    // Add emojis based on field content
+                    // Add emojis based on field content with enhanced patterns
                     if (field.name.toLowerCase().includes('robux') || field.name.toLowerCase().includes('balance')) {
                         enhancedName = `💰 ${field.name}`;
+                    } else if (field.name.toLowerCase().includes('pending')) {
+                        enhancedName = `⏳ ${field.name}`;
                     } else if (field.name.toLowerCase().includes('rap') || field.name.toLowerCase().includes('value')) {
                         enhancedName = `💎 ${field.name}`;
+                    } else if (field.name.toLowerCase().includes('owned') || field.name.toLowerCase().includes('items')) {
+                        enhancedName = `📦 ${field.name}`;
+                    } else if (field.name.toLowerCase().includes('credit') || field.name.toLowerCase().includes('billing')) {
+                        enhancedName = `💳 ${field.name}`;
+                    } else if (field.name.toLowerCase().includes('convert')) {
+                        enhancedName = `🔄 ${field.name}`;
+                    } else if (field.name.toLowerCase().includes('payment') || field.name.toLowerCase().includes('payments')) {
+                        enhancedName = `💸 ${field.name}`;
                     } else if (field.name.toLowerCase().includes('premium')) {
                         enhancedName = `⭐ ${field.name}`;
-                    } else if (field.name.toLowerCase().includes('billing') || field.name.toLowerCase().includes('payment')) {
-                        enhancedName = `💳 ${field.name}`;
                     } else if (field.name.toLowerCase().includes('setting') || field.name.toLowerCase().includes('status')) {
                         enhancedName = `⚙️ ${field.name}`;
                     } else if (field.name.toLowerCase().includes('game') || field.name.toLowerCase().includes('pass')) {
@@ -448,6 +456,17 @@ client.on('messageCreate', async (message) => {
                         enhancedName = `🏆 ${field.name}`;
                     } else {
                         enhancedName = `📊 ${field.name}`;
+                    }
+
+                    // Enhanced value formatting with emojis for common patterns
+                    if (field.value.toLowerCase().includes('false')) {
+                        enhancedValue = field.value.replace(/false/gi, '❌ False');
+                    } else if (field.value.toLowerCase().includes('true')) {
+                        enhancedValue = field.value.replace(/true/gi, '✅ True');
+                    } else if (field.value.match(/\b0\b/)) {
+                        enhancedValue = field.value.replace(/\b0\b/g, '0');
+                    } else {
+                        enhancedValue = field.value;
                     }
 
                     forwardedEmbed.addFields({
