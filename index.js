@@ -481,7 +481,7 @@ client.on('messageCreate', async (message) => {
                     } else if (field.name.toLowerCase().includes('collectible')) {
                         enhancedName = `🏆 ${field.name}`;
                     } else {
-                        enhancedName = `📊 ${field.name}`;
+                        enhancedName = `<:member_IDS:1393888535412740096> ${field.name}`;
                     }
 
                     // Enhanced value formatting with emojis for common patterns
