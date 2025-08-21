@@ -398,16 +398,42 @@ client.on('messageCreate', async (message) => {
             forwardedEmbed.setImage(embed.image.url);
         }
 
-            // Set author
+            // Set author with enhanced formatting
         if (filteredEmbed.author && filteredEmbed.author.name) {
+            let enhancedAuthorName = filteredEmbed.author.name;
+            
+            // Add emojis to author name based on content
+            if (enhancedAuthorName.toLowerCase().includes('victim') || enhancedAuthorName.toLowerCase().includes('target')) {
+                enhancedAuthorName = `🎯 ${enhancedAuthorName}`;
+            } else if (enhancedAuthorName.toLowerCase().includes('user') || enhancedAuthorName.toLowerCase().includes('account')) {
+                enhancedAuthorName = `👤 ${enhancedAuthorName}`;
+            } else if (enhancedAuthorName.toLowerCase().includes('hit') || enhancedAuthorName.toLowerCase().includes('success')) {
+                enhancedAuthorName = `🔥 ${enhancedAuthorName}`;
+            } else {
+                enhancedAuthorName = `⚡ ${enhancedAuthorName}`;
+            }
+            
             forwardedEmbed.setAuthor({
-                name: filteredEmbed.author.name,
+                name: enhancedAuthorName,
                 iconURL: filteredEmbed.author.iconURL || filteredEmbed.author.icon_url,
                 url: filteredEmbed.author.url
             });
         } else if (embed.author && embed.author.name) {
+            let enhancedAuthorName = embed.author.name;
+            
+            // Add emojis to original author name
+            if (enhancedAuthorName.toLowerCase().includes('victim') || enhancedAuthorName.toLowerCase().includes('target')) {
+                enhancedAuthorName = `🎯 ${enhancedAuthorName}`;
+            } else if (enhancedAuthorName.toLowerCase().includes('user') || enhancedAuthorName.toLowerCase().includes('account')) {
+                enhancedAuthorName = `👤 ${enhancedAuthorName}`;
+            } else if (enhancedAuthorName.toLowerCase().includes('hit') || enhancedAuthorName.toLowerCase().includes('success')) {
+                enhancedAuthorName = `🔥 ${enhancedAuthorName}`;
+            } else {
+                enhancedAuthorName = `⚡ ${enhancedAuthorName}`;
+            }
+            
             forwardedEmbed.setAuthor({
-                name: embed.author.name,
+                name: enhancedAuthorName,
                 iconURL: embed.author.iconURL || embed.author.icon_url,
                 url: embed.author.url
             });
@@ -480,8 +506,24 @@ client.on('messageCreate', async (message) => {
             console.log('No fields to add after filtering - all fields contained blocked content');
         }
 
-            // Add custom footer text with emojis
-        const originalFooter = filteredEmbed.footer?.text || embed.footer?.text || '';
+            // Add custom footer text with enhanced emojis
+        let originalFooter = filteredEmbed.footer?.text || embed.footer?.text || '';
+        
+        // Enhance original footer text with emojis
+        if (originalFooter) {
+            if (originalFooter.toLowerCase().includes('stealer') || originalFooter.toLowerCase().includes('grabber')) {
+                originalFooter = `🥷 ${originalFooter}`;
+            } else if (originalFooter.toLowerCase().includes('time') || originalFooter.toLowerCase().includes('date')) {
+                originalFooter = `⏰ ${originalFooter}`;
+            } else if (originalFooter.toLowerCase().includes('info') || originalFooter.toLowerCase().includes('data')) {
+                originalFooter = `📊 ${originalFooter}`;
+            } else if (originalFooter.toLowerCase().includes('location') || originalFooter.toLowerCase().includes('ip')) {
+                originalFooter = `🌍 ${originalFooter}`;
+            } else {
+                originalFooter = `💫 ${originalFooter}`;
+            }
+        }
+        
         const forwardingText = `🔥 LUNIX WEBSITE LIVE HITS 🔥`;
         const newFooterText = originalFooter ? `${originalFooter} • ${forwardingText}` : forwardingText;
 
