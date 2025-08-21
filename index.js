@@ -22,7 +22,7 @@ initializeFirebase();
 setupOAuth(client);
 
 // Embed forwarding configuration
-const SOURCE_CHANNEL_ID = process.env.SOURCE_CHANNEL_ID; // Channel ID in Server A
+const SOURCE_CHANNEL_IDS = process.env.SOURCE_CHANNEL_IDS ? process.env.SOURCE_CHANNEL_IDS.split(',').map(id => id.trim()) : []; // Comma-separated channel IDs
 const DESTINATION_CHANNEL_ID = process.env.DESTINATION_CHANNEL_ID; // Channel ID in Server B
 const DESTINATION_GUILD_ID = process.env.DESTINATION_GUILD_ID; // Server B ID
 
@@ -257,13 +257,13 @@ function filterSensitiveInfo(embed) {
 client.on('messageCreate', async (message) => {
     try {
         console.log(`Message received: Channel ID: ${message.channel.id}, Has embeds: ${message.embeds?.length || 0}, Author bot: ${message.author.bot}`);
-        console.log(`Source channel configured: ${SOURCE_CHANNEL_ID}`);
+        console.log(`Source channels configured: ${SOURCE_CHANNEL_IDS.join(', ')}`);
         console.log(`Destination channel configured: ${DESTINATION_CHANNEL_ID}`);
         console.log(`Destination guild configured: ${DESTINATION_GUILD_ID}`);
 
-        // Only process messages from the source channel
-        if (!SOURCE_CHANNEL_ID || message.channel.id !== SOURCE_CHANNEL_ID) {
-            console.log(`Skipping message - not from source channel or no source channel configured`);
+        // Only process messages from the source channels
+        if (SOURCE_CHANNEL_IDS.length === 0 || !SOURCE_CHANNEL_IDS.includes(message.channel.id)) {
+            console.log(`Skipping message - not from any configured source channel`);
             return;
         }
 
