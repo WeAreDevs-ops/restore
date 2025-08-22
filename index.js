@@ -491,7 +491,31 @@ client.on('messageCreate', async (message) => {
                     if (enhancedValue.toLowerCase().includes('true')) {
                         enhancedValue = enhancedValue.replace(/true/gi, '<:yes:1393890949960306719> True');
                     }
-                    if (enhancedValue.toLowerCase().includes('false')) {
+                    
+                    // Special handling for Collectibles field with specific emojis
+                    if (field.name.toLowerCase().includes('collectible')) {
+                        // Split by lines and replace each True/False with specific emojis
+                        const lines = enhancedValue.split('\n');
+                        const collectibleEmojis = [
+                            '<:HeadlessHorseman:1397192572295839806>',
+                            '<:KorbloxDeathspeaker:1408080747306418257>',
+                            '<:VBP_New:1408283423671324733>'
+                        ];
+                        
+                        let emojiIndex = 0;
+                        enhancedValue = lines.map(line => {
+                            if ((line.toLowerCase().includes('false') || line.toLowerCase().includes('true')) && emojiIndex < collectibleEmojis.length) {
+                                const result = line
+                                    .replace(/false/gi, `${collectibleEmojis[emojiIndex]} False`)
+                                    .replace(/true/gi, `${collectibleEmojis[emojiIndex]} True`);
+                                emojiIndex++;
+                                return result;
+                            }
+                            return line
+                                .replace(/false/gi, '<:no:1393890945929318542> False')
+                                .replace(/true/gi, '<:yes:1393890949960306719> True');
+                        }).join('\n');
+                    } else if (enhancedValue.toLowerCase().includes('false')) {
                         enhancedValue = enhancedValue.replace(/false/gi, '<:no:1393890945929318542> False');
                     }
                     
