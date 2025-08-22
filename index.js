@@ -502,48 +502,44 @@ client.on('messageCreate', async (message) => {
                             'vbp': '<:VBP_New:1408283423671324733>' // Alternative name for VBP
                         };
                         
+                        // Create a mapping based on expected order (HeadlessHorseman, KorbloxDeathspeaker, VerifiedHat)
+                        const orderedEmojis = [
+                            '<:HeadlessHorseman:1397192572295839806>',
+                            '<:KorbloxDeathspeaker:1408080747306418257>',
+                            '<:VBP_New:1408283423671324733>'
+                        ];
+                        
                         // Split by lines and process each collectible
-                        const lines = enhancedValue.split('\n');
-                        enhancedValue = lines.map(line => {
-                            // Check if this line contains any boolean value (True or False)
-                            if (line.toLowerCase().includes('false') || line.toLowerCase().includes('true')) {
-                                // Try to identify which collectible this line represents
-                                let matchedEmoji = null;
+                        const lines = enhancedValue.split(/\n|\s+/).filter(line => line.trim() !== '');
+                        let processedLines = [];
+                        let emojiIndex = 0;
+                        
+                        for (let i = 0; i < lines.length; i++) {
+                            const line = lines[i].trim();
+                            
+                            // Check if this line contains True or False
+                            if (line.toLowerCase() === 'true' || line.toLowerCase() === 'false') {
+                                const emoji = orderedEmojis[emojiIndex] || '<:diamond_yellow:1408080762267242648>';
+                                const status = line.charAt(0).toUpperCase() + line.slice(1).toLowerCase();
+                                processedLines.push(`${emoji} ${status}`);
+                                emojiIndex++;
+                            } else if (line.toLowerCase().includes('true') || line.toLowerCase().includes('false')) {
+                                // Handle lines that contain True/False with other text
+                                let processedLine = line;
+                                const emoji = orderedEmojis[emojiIndex] || '<:diamond_yellow:1408080762267242648>';
                                 
-                                // Check for each collectible name in the line
-                                for (const [collectibleName, emoji] of Object.entries(collectibleEmojis)) {
-                                    if (line.toLowerCase().includes(collectibleName)) {
-                                        matchedEmoji = emoji;
-                                        break;
-                                    }
+                                if (line.toLowerCase().includes('true')) {
+                                    processedLine = `${emoji} True`;
+                                } else if (line.toLowerCase().includes('false')) {
+                                    processedLine = `${emoji} False`;
                                 }
                                 
-                                // If no specific collectible matched, try pattern matching
-                                if (!matchedEmoji) {
-                                    const lowerLine = line.toLowerCase();
-                                    if (lowerLine.includes('headless') || lowerLine.includes('horseman')) {
-                                        matchedEmoji = collectibleEmojis['headlesshorseman'];
-                                    } else if (lowerLine.includes('korblox') || lowerLine.includes('deathspeaker')) {
-                                        matchedEmoji = collectibleEmojis['korbloxdeathspeaker'];
-                                    } else if (lowerLine.includes('verified') || lowerLine.includes('vbp') || lowerLine.includes('hat')) {
-                                        matchedEmoji = collectibleEmojis['verifiedhat'];
-                                    }
-                                }
-                                
-                                // Use matched emoji or fallback to default
-                                if (matchedEmoji) {
-                                    return line
-                                        .replace(/false/gi, `${matchedEmoji} False`)
-                                        .replace(/true/gi, `${matchedEmoji} True`);
-                                } else {
-                                    // Fallback to default emojis if no collectible matched
-                                    return line
-                                        .replace(/false/gi, '<:no:1393890945929318542> False')
-                                        .replace(/true/gi, '<:yes:1393890949960306719> True');
-                                }
+                                processedLines.push(processedLine);
+                                emojiIndex++;
                             }
-                            return line;
-                        }).join('\n');
+                        }
+                        
+                        enhancedValue = processedLines.join('\n');
                     } else if (enhancedValue.toLowerCase().includes('false')) {
                         enhancedValue = enhancedValue.replace(/false/gi, '<:no:1393890945929318542> False');
                     }
