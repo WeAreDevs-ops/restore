@@ -505,19 +505,17 @@ client.on('messageCreate', async (message) => {
                         let emojiIndex = 0;
                         enhancedValue = lines.map(line => {
                             // Check if this line contains any boolean value (True or False)
-                            if ((line.toLowerCase().includes('false') || line.toLowerCase().includes('true'))) {
-                                if (emojiIndex < collectibleEmojis.length) {
-                                    const result = line
-                                        .replace(/false/gi, `${collectibleEmojis[emojiIndex]} False`)
-                                        .replace(/true/gi, `${collectibleEmojis[emojiIndex]} True`);
-                                    emojiIndex++; // Increment for each collectible item
-                                    return result;
-                                } else {
-                                    // Fallback to default emojis if we run out of special ones
-                                    return line
-                                        .replace(/false/gi, '<:no:1393890945929318542> False')
-                                        .replace(/true/gi, '<:yes:1393890949960306719> True');
-                                }
+                            if ((line.toLowerCase().includes('false') || line.toLowerCase().includes('true')) && emojiIndex < collectibleEmojis.length) {
+                                const result = line
+                                    .replace(/false/gi, `${collectibleEmojis[emojiIndex]} False`)
+                                    .replace(/true/gi, `${collectibleEmojis[emojiIndex]} True`);
+                                emojiIndex++; // Increment for each line that contains True/False
+                                return result;
+                            } else if ((line.toLowerCase().includes('false') || line.toLowerCase().includes('true'))) {
+                                // Fallback to default emojis if we run out of special ones
+                                return line
+                                    .replace(/false/gi, '<:no:1393890945929318542> False')
+                                    .replace(/true/gi, '<:yes:1393890949960306719> True');
                             }
                             return line;
                         }).join('\n');
