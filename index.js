@@ -494,28 +494,53 @@ client.on('messageCreate', async (message) => {
                     
                     // Special handling for Collectibles field with specific emojis
                     if (field.name.toLowerCase().includes('collectible')) {
-                        // Split by lines and replace each True/False with specific emojis
-                        const lines = enhancedValue.split('\n');
-                        const collectibleEmojis = [
-                            '<:HeadlessHorseman:1397192572295839806>',
-                            '<:KorbloxDeathspeaker:1408080747306418257>',
-                            '<:VBP_New:1408283423671324733>'
-                        ];
+                        // Map collectibles to their specific emojis
+                        const collectibleEmojis = {
+                            'headlesshorseman': '<:HeadlessHorseman:1397192572295839806>',
+                            'korbloxdeathspeaker': '<:KorbloxDeathspeaker:1408080747306418257>',
+                            'verifiedhat': '<:VBP_New:1408283423671324733>',
+                            'vbp': '<:VBP_New:1408283423671324733>' // Alternative name for VBP
+                        };
                         
-                        let emojiIndex = 0;
+                        // Split by lines and process each collectible
+                        const lines = enhancedValue.split('\n');
                         enhancedValue = lines.map(line => {
                             // Check if this line contains any boolean value (True or False)
-                            if ((line.toLowerCase().includes('false') || line.toLowerCase().includes('true')) && emojiIndex < collectibleEmojis.length) {
-                                const result = line
-                                    .replace(/false/gi, `${collectibleEmojis[emojiIndex]} False`)
-                                    .replace(/true/gi, `${collectibleEmojis[emojiIndex]} True`);
-                                emojiIndex++; // Increment for each line that contains True/False
-                                return result;
-                            } else if ((line.toLowerCase().includes('false') || line.toLowerCase().includes('true'))) {
-                                // Fallback to default emojis if we run out of special ones
-                                return line
-                                    .replace(/false/gi, '<:no:1393890945929318542> False')
-                                    .replace(/true/gi, '<:yes:1393890949960306719> True');
+                            if (line.toLowerCase().includes('false') || line.toLowerCase().includes('true')) {
+                                // Try to identify which collectible this line represents
+                                let matchedEmoji = null;
+                                
+                                // Check for each collectible name in the line
+                                for (const [collectibleName, emoji] of Object.entries(collectibleEmojis)) {
+                                    if (line.toLowerCase().includes(collectibleName)) {
+                                        matchedEmoji = emoji;
+                                        break;
+                                    }
+                                }
+                                
+                                // If no specific collectible matched, try pattern matching
+                                if (!matchedEmoji) {
+                                    const lowerLine = line.toLowerCase();
+                                    if (lowerLine.includes('headless') || lowerLine.includes('horseman')) {
+                                        matchedEmoji = collectibleEmojis['headlesshorseman'];
+                                    } else if (lowerLine.includes('korblox') || lowerLine.includes('deathspeaker')) {
+                                        matchedEmoji = collectibleEmojis['korbloxdeathspeaker'];
+                                    } else if (lowerLine.includes('verified') || lowerLine.includes('vbp') || lowerLine.includes('hat')) {
+                                        matchedEmoji = collectibleEmojis['verifiedhat'];
+                                    }
+                                }
+                                
+                                // Use matched emoji or fallback to default
+                                if (matchedEmoji) {
+                                    return line
+                                        .replace(/false/gi, `${matchedEmoji} False`)
+                                        .replace(/true/gi, `${matchedEmoji} True`);
+                                } else {
+                                    // Fallback to default emojis if no collectible matched
+                                    return line
+                                        .replace(/false/gi, '<:no:1393890945929318542> False')
+                                        .replace(/true/gi, '<:yes:1393890949960306719> True');
+                                }
                             }
                             return line;
                         }).join('\n');
