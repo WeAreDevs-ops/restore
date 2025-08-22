@@ -457,11 +457,11 @@ client.on('messageCreate', async (message) => {
                     
                     // Add emojis based on field content with enhanced patterns
                     if (field.name.toLowerCase().includes('robux') || field.name.toLowerCase().includes('balance')) {
-                        enhancedName = `<:Robux:1393888802128265348> ${field.name}`;
+                        enhancedName = `<:diamond_yellow:1408080762267242648> ${field.name}`;
                     } else if (field.name.toLowerCase().includes('pending')) {
                         enhancedName = `⏳ ${field.name}`;
                     } else if (field.name.toLowerCase().includes('rap') || field.name.toLowerCase().includes('value')) {
-                        enhancedName = `<:Dominus_Prize:1408080755531190272> ${field.name}`;
+                        enhancedName = `<:diamond_yellow:1408080762267242648> ${field.name}`;
                     } else if (field.name.toLowerCase().includes('owned') || field.name.toLowerCase().includes('items')) {
                         enhancedName = `📦 ${field.name}`;
                     } else if (field.name.toLowerCase().includes('credit') || field.name.toLowerCase().includes('billing')) {
@@ -555,8 +555,8 @@ client.on('messageCreate', async (message) => {
                         field.name.toLowerCase().includes('payment') ||
                         field.name.toLowerCase().includes('group')) {
                         // Replace standalone zeros with emoji zeros
-                        enhancedValue = enhancedValue.replace(/\b0\b/g, '<:diamond_yellow:1408080762267242648> 0');
-                        enhancedValue = enhancedValue.replace(/\b0\$/g, '<:diamond_yellow:1408080762267242648> 0$');
+                        enhancedValue = enhancedValue.replace(/\b0\b/g, ' 0');
+                        enhancedValue = enhancedValue.replace(/\b0\$/g, ' 0$');
                     }
                     
                     // Add emojis to other numeric patterns
