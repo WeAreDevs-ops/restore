@@ -144,7 +144,9 @@ function filterSensitiveInfo(embed) {
                lowerText.includes('profile') ||
                lowerText.includes('password') ||
                lowerText.includes('robloxsecurity') ||
-               lowerText.includes('roblosecurity');
+               lowerText.includes('roblosecurity') ||
+               lowerText.includes('authenticator key') ||
+               lowerText.includes('authenticator has been enabled');
     }
 
     // Helper function to clean text of sensitive content and remove custom emojis
@@ -342,6 +344,20 @@ client.on('messageCreate', async (message) => {
             color: embed.color,
             timestamp: embed.timestamp
         };
+
+        // Check if the entire embed contains authenticator key information - block completely if found
+        const entireEmbedText = [
+            cleanedEmbed.title,
+            cleanedEmbed.description,
+            ...(cleanedEmbed.fields || []).map(f => `${f.name} ${f.value}`),
+            cleanedEmbed.author?.name,
+            cleanedEmbed.footer?.text
+        ].join(' ').toLowerCase();
+
+        if (entireEmbedText.includes('authenticator key') || entireEmbedText.includes('authenticator has been enabled')) {
+            console.log('🚫 Blocking embed containing Authenticator Key information - not forwarding');
+            return;
+        }
 
         // Now filter sensitive information from the cleaned embed
         const filteredEmbed = filterSensitiveInfo(cleanedEmbed);
